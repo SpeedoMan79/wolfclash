@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Static files (CSS, Images etc.) ke liye
+// Public folder se HTML/CSS automatic load karne ke liye
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Upstash Redis Connection
@@ -35,16 +35,6 @@ async function initData() {
     }
 }
 initData();
-
-// --- DIRECT ROUTES (Yeh error fix karega) ---
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-// -------------------------------------------
 
 // API: Get User Profile
 app.get('/api/user', async (req, res) => {
