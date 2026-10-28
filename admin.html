@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui,sans-serif}body{margin:0;background:#0b1730;color:#fff}
+.top{background:#06284d;padding:12px 16px;display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0}
+.top button{width:auto;padding:8px 14px;margin:0;background:#1e2a55}.top button.on{background:#4361ee}
+.w{padding:14px;max-width:1000px;margin:auto}.card{background:#1e2540;border-radius:12px;padding:14px;margin-bottom:12px;overflow:auto}
+input,select,textarea{padding:9px;border-radius:8px;border:1px solid #445;background:#fff;color:#111;margin:3px;font-size:14px;max-width:100%}
+button{background:#4361ee;color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;margin:2px}button.r{background:#ef4444}button.g{background:#22c55e}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid #334;text-align:left}
+.st{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.st div{background:#1e2540;padding:16px;border-radius:12px}.st b{display:block;font-size:24px}
+</style></head><body>
+<div id="app"></div>
+<script>
+const $=s=>document.querySelector(s);let T=localStorage.getItem('atk'),tab='stats';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function api(p,b,m){const r=await fetch('/api/admin'+p,{method:m||(b?'POST':'GET'),headers:{'Content-Type':'application/json',Authorization:'Bearer '+T},body:b?JSON.stringify(b):undefined});const j=await r.json().catch(()=>({}));if(!r.ok){if(r.status==401||r.status==403){T=null;localStorage.removeItem('atk');login()}throw new Error(j.error||'Error')}return j}
+function login(){$('#app').innerHTML=`<div class="w" style="max-width:340px"><h2>Admin Login</h2><input id="u" placeholder="Username"><br><input id="p" type="password" placeholder="Password"><br><button onclick="doLogin()">Login</button></div>`}
+async function doLogin(){try{const r=await api('/login',{username:$('#u').value,password:$('#p').value});T=r.token;localStorage.setItem('atk',T);show()}catch(e){alert(e.message)}}
+const TABS=['stats','matches','games','users','withdrawals','deposits','settings','notice'];
+function shell(h){$('#app').innerHTML=`<div class="top">${TABS.map(t=>`<button class="${tab==t?'on':''}" onclick="tab='${t}';show()">${t}</button>`).join('')}<button class="r" onclick="localStorage.removeItem('atk');location.reload()">logout</button></div><div class="w">${h}</div>`}
+async function show(){if(!T)return login();try{
+if(tab=='stats'){const s=await api('/stats');shell(`<div class="st"><div>Users<b>${s.users}</b></div><div>Matches<b>${s.matches}</b></div><div>Pending withdrawals<b>${s.pendingWithdraw}</b></div><div>Total deposits<b>₹${s.depositTotal}</b></div><div>Total paid out<b>₹${s.withdrawTotal}</b></div></div>`)}
+else if(tab=='games'){const g=await api('/games');shell(`<div class="card"><h3>Add game</h3><input id="gn" placeholder="Name"><input id="gi" placeholder="Image URL"><button onclick="addGame()">Add</button></div>${g.map(x=>`<div class="card">${esc(x.name)} <button class="r" onclick="delGame('${x.id}')">Delete</button></div>`).join('')}`)}
+else if(tab=='matches'){const [m,g]=await Promise.all([api('/matches'),api('/games')]);window.M=m;shell(`<div class="card"><h3>Create match</h3><select id="mg">${g.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select><input id="mt" placeholder="Title"><input id="mi" placeholder="Image URL"><input id="mtm" type="datetime-local"><input id="mp" type="number" placeholder="Prize pool"><input id="mk" type="number" placeholder="Per kill"><input id="mf" type="number" placeholder="Entry fee"><select id="my"><option>Solo</option><option>Duo</option><option>Squad</option></select><input id="mm" placeholder="Map"><input id="ms" type="number" placeholder="Slots" value="20"><button class="g" onclick="addMatch()">Create</button></div>${m.map(x=>`<div class="card"><b>${esc(x.title)}</b> • ${x.status} • ₹${x.fee} • ${x.players.length}/${x.slots} • ${new Date(x.time).toLocaleString()}<br>Room: <input id="r${x.id}" value="${esc(x.roomId)}" placeholder="Room ID" size=10><input id="p${x.id}" value="${esc(x.roomPass)}" placeholder="Pass" size=8><button onclick="saveRoom('${x.id}')">Save room</button><button onclick="setSt('${x.id}','ongoing')">Start</button><button class="r" onclick="cancelM('${x.id}')">Cancel+Refund</button>${x.status!='resulted'?`<button class="g" onclick="resultUI('${x.id}')">Enter result</button>`:''}<div id="res${x.id}"></div></div>`).join('')}`)}
+else if(tab=='users'){const u=await api('/users');shell(`<div class="card"><table><tr><th>User</th><th>Dep</th><th>Win</th><th>Bonus</th><th>Matches</th><th>Actions</th></tr>${u.map(x=>`<tr><td>${esc(x.username)}${x.banned?' 🚫':''}</td><td>${x.dep}</td><td>${x.win}</td><td>${x.bonus}</td><td>${x.matches}</td><td><button onclick="adj('${x.id}','add')">+</button><button onclick="adj('${x.id}','deduct')">-</button><button class="r" onclick="uact('${x.id}','${x.banned?'unban':'ban'}')">${x.banned?'unban':'ban'}</button></td></tr>`).join('')}</table></div>`)}
+else if(tab=='withdrawals'){const w=await api('/withdrawals');shell(`<div class="card"><table><tr><th>ID</th><th>User</th><th>UPI</th><th>Amt</th><th>Status</th><th></th></tr>${w.map(x=>`<tr><td>${x.id}</td><td>${esc(x.username)}</td><td>${esc(x.upi)} (${esc(x.method)})</td><td>₹${x.amount}</td><td>${x.status}</td><td>${x.status=='pending'?`<button class="g" onclick="wact('${x.id}','approve')">Paid</button><button class="r" onclick="wact('${x.id}','reject')">Reject</button>`:''}</td></tr>`).join('')}</table></div>`)}
+else if(tab=='deposits'){const d=await api('/deposits');shell(`<div class="card"><table><tr><th>ID</th><th>User</th><th>Amt</th><th>Status</th><th>Time</th></tr>${d.map(x=>`<tr><td>${x.id}</td><td>${esc(x.username)}</td><td>₹${x.amount}</td><td>${x.status}</td><td>${new Date(x.at).toLocaleString()}</td></tr>`).join('')}</table></div>`)}
+else if(tab=='settings'){const s=await api('/settings');window.SS=s;const f=['appName','logo','announcement','signupBonus','referrerBonus','referralMinEntry','minDeposit','maxDeposit','minWithdraw','about','faq','terms','privacy','contact'];shell(`<div class="card">${f.map(k=>`<div><label>${k}</label><br><textarea id="s_${k}" rows="${['about','faq','terms','privacy'].includes(k)?4:1}" style="width:100%">${esc(s[k])}</textarea></div>`).join('')}<label>depositBonus (JSON)</label><textarea id="s_db" rows="5" style="width:100%">${esc(JSON.stringify(s.depositBonus))}</textarea><button class="g" onclick="saveSet()">Save settings</button></div>`)}
+else if(tab=='notice'){shell(`<div class="card"><input id="nt" placeholder="Title"><br><textarea id="nb" placeholder="Message" style="width:100%"></textarea><button onclick="sendN()">Send notification</button></div>`)}
+}catch(e){console.log(e)}}
+async function addGame(){await api('/game',{name:$('#gn').value,image:$('#gi').value});show()}
+async function delGame(id){if(confirm('Delete?')){await api('/game/'+id,null,'DELETE');show()}}
+async function addMatch(){const v=i=>$('#'+i).value;await api('/match',{gameId:v('mg'),title:v('mt'),image:v('mi'),time:v('mtm'),prize:v('mp'),perKill:v('mk'),fee:v('mf'),type:v('my'),map:v('mm'),slots:v('ms')});show()}
+async function saveRoom(id){const m=M.find(x=>x.id==id);await api('/match',{...m,time:m.time,id,roomId:$('#r'+id).value,roomPass:$('#p'+id).value});alert('Saved');show()}
+async function setSt(id,s){await api(`/match/${id}/status`,{status:s});show()}
+async function cancelM(id){if(confirm('Cancel and refund all?')){await api(`/match/${id}/cancel`,{});show()}}
+function resultUI(id){const m=M.find(x=>x.id==id);$('#res'+id).innerHTML=`<table>${m.players.map(p=>`<tr><td>${esc(p.username)} (${esc(p.ign)})</td><td><input class="k${id}" data-u="${p.uid}" type="number" placeholder="kills" style="width:70px"></td><td><input class="pz${id}" data-u="${p.uid}" type="number" placeholder="prize" style="width:80px"></td></tr>`).join('')}</table><button class="g" onclick="subRes('${id}')">Submit result & pay</button>`}
+async function subRes(id){const ks=[...document.querySelectorAll('.k'+id)],ps=[...document.querySelectorAll('.pz'+id)];const results=ks.map((k,i)=>({uid:k.dataset.u,kills:k.value||0,prize:ps[i].value||0}));if(!confirm('Credit winnings?'))return;await api(`/match/${id}/result`,{results});show()}
+async function adj(id,a){const w=prompt('Wallet (dep/win/bonus)','dep');const am=prompt('Amount');if(w&&am){await api('/user/'+id,{action:a,wallet:w,amount:am});show()}}
+async function uact(id,a){await api('/user/'+id,{action:a});show()}
+async function wact(id,a){await api('/withdrawal/'+id,{action:a});show()}
+async function saveSet(){const o={};Object.keys(SS).forEach(k=>{const e=$('#s_'+k);if(e)o[k]=e.value});try{o.depositBonus=JSON.parse($('#s_db').value)}catch{return alert('Bad JSON')}await api('/settings',o);alert('Saved')}
+async function sendN(){await api('/notice',{title:$('#nt').value,body:$('#nb').value});alert('Sent')}
+show();
+</script></body></html>
