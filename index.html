@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esports Tournament Arena</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #071026;
+            --card-bg: #0f1d3a;
+            --card-inner: #182a4d;
+            --accent-blue: #0072ff;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --gold: #ffc107;
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #030712;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 414px;
+            height: 100vh;
+            max-height: 896px;
+            background-color: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        /* Top Header */
+        .app-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-dark);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 10;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #ff9800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .user-name {
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .coin-badge {
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.4);
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+            color: var(--gold);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            padding-bottom: 80px;
+        }
+
+        .content-area::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Notice Banner */
+        .notice-box {
+            background: var(--card-inner);
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .notice-box i {
+            color: var(--gold);
+            font-size: 16px;
+        }
+
+        /* Promo Card */
+        .promo-card {
+            background: linear-gradient(135deg, #b91c1c, #881337);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .promo-title {
+            color: var(--gold);
+            font-weight: 800;
+            font-size: 15px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .promo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .promo-header {
+            background: rgba(0,0,0,0.4);
+            padding: 5px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .promo-row {
+            background: rgba(0,0,0,0.2);
+            padding: 5px;
+            color: #e2e8f0;
+        }
+
+        /* Matches Tabs */
+        .section-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .tabs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-card {
+            background: #ffffff;
+            color: #000;
+            padding: 12px 8px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .tab-card i { font-size: 18px; }
+        .tab-card.ongoing i { color: #10b981; }
+        .tab-card.upcoming i { color: #0284c7; }
+        .tab-card.completed i { color: #22c55e; }
+
+        /* Game Categories */
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+        }
+
+        .game-banner {
+            width: 100%;
+            height: 110px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .game-info {
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .game-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #4ade80;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            background-color: #4ade80;
+            border-radius: 50%;
+        }
+
+        /* Tournament Details Card */
+        .tournament-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .t-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .t-time {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 10px;
+        }
+
+        .t-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: var(--card-inner);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .t-stat-val {
+            font-weight: bold;
+            font-size: 13px;
+            color: var(--gold);
+        }
+
+        .t-stat-lbl {
+            font-size: 10px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
+        .progress-bar-bg {
+            background: var(--card-inner);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .progress-bar-fill {
+            background: var(--accent-red);
+            height: 100%;
+            width: 80%;
+        }
+
+        .t-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .spots-left {
+            font-size: 12px;
+            color: var(--accent-red);
+            font-weight: bold;
+        }
+
+        .btn-join {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Wallet Component */
+        .wallet-card {
+            background: var(--card-bg);
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .balance-main {
+            font-size: 26px;
+            font-weight: bold;
+            margin: 8px 0;
+            color: var(--gold);
+        }
+
+        .balance-sub {
+            display: flex;
+            justify-content: space-around;
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 15px;
+        }
+
+        .wallet-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-wallet {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-buy { background: var(--accent-green); }
+        .btn-withdraw { background: var(--accent-red); }
+
+        .amount-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .amt-btn {
+            background: var(--card-inner);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Menu & List Items */
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu-item {
+            background: var(--card-bg);
+            padding: 12px 14px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .menu-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-item-left i {
+            color: var(--accent-blue);
+            width: 18px;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            z-index: 20;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            color: var(--text-sub);
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .nav-item i { font-size: 17px; }
+        .nav-item.active { color: var(--accent-blue); }
+
+        /* Hide Views */
+        .view { display: none; }
+        .view.active { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Header -->
+    <div class="app-header">
+        <div class="user-info">
+            <div class="user-avatar">🎮</div>
+            <div class="user-name">KhiladiBattle</div>
+        </div>
+        <div class="header-actions">
+            <div class="coin-badge" onclick="switchView('wallet')">
+                <i class="fas fa-coins"></i>
+                <span id="user-coins">20</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-area">
+        
+        <!-- 1. HOME VIEW -->
+        <div id="view-home" class="view active">
+            <div class="notice-box">
+                <i class="fas fa-bullhorn"></i>
+                <span>Notice: Screen Recording On karke khelna zaroori hai.</span>
+            </div>
+
+            <div class="promo-card">
+                <div class="promo-title">Coin Deposit Bonus</div>
+                <div class="promo-grid">
+                    <div class="promo-header">DEPOSIT</div>
+                    <div class="promo-header">BONUS</div>
+                    <div class="promo-header">TOTAL</div>
+                    <div class="promo-row">₹50</div>
+                    <div class="promo-row">₹10</div>
+                    <div class="promo-row">₹60</div>
+                    <div class="promo-row">₹100</div>
+                    <div class="promo-row">₹20</div>
+                    <div class="promo-row">₹120</div>
+                </div>
+            </div>
+
+            <div class="section-title">My Matches</div>
+            <div class="tabs-grid">
+                <div class="tab-card ongoing" onclick="switchView('tournaments')">
+                    <i class="fas fa-sync-alt"></i> Ongoing
+                </div>
+                <div class="tab-card upcoming" onclick="switchView('tournaments')">
+                    <i class="fas fa-calendar-alt"></i> Upcoming
+                </div>
+                <div class="tab-card completed" onclick="switchView('tournaments')">
+                    <i class="fas fa-check-circle"></i> Completed
+                </div>
+            </div>
+
+            <div class="section-title">Esports Games</div>
+            <div class="game-card" onclick="switchView('tournaments')">
+                <div class="game-banner" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&auto=format&fit=crop&q=60');"></div>
+                <div class="game-info">
+                    <span>BR SURVIVAL</span>
+                    <div class="game-badge"><div class="dot"></div> 67 Matches</div>
+                </div>
+            </div>
+            <div class="game-card" onclick="switchView('tournaments')">
+                <div class="game-banner" style="background-image: url('https://images.unsplash.com/photo-1511512578047-dfb367046420?w=500&auto=format&fit=crop&q=60');"></div>
+                <div class="game-info">
+                    <span>PER KILL MATCHES</span>
+                    <div class="game-badge"><div class="dot"></div> 14 Matches</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. TOURNAMENTS VIEW -->
+        <div id="view-tournaments" class="view">
+            <div class="section-title">BR SURVIVAL Contests</div>
+            
+            <div class="tournament-card">
+                <div class="t-title">Top - 9 Prize 🏆 SOLO SURVIVAL #190888</div>
+                <div class="t-time">Time : Today at 08:20 PM | Map: Bermuda</div>
+                <div class="t-stats-grid">
+                    <div>
+                        <div class="t-stat-lbl">Prize Pool</div>
+                        <div class="t-stat-val">₹ 220</div>
+                    </div>
+                    <div>
+                        <div class="t-stat-lbl">Per Kill</div>
+                        <div class="t-stat-val">₹ 10</div>
+                    </div>
+                    <div>
+                        <div class="t-stat-lbl">Entry Fee</div>
+                        <div class="t-stat-val">₹ 11</div>
+                    </div>
+                </div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
+                <div class="t-footer">
+                    <span class="spots-left">Only 4 Spots Left (16/20)</span>
+                    <button class="btn-join" onclick="joinTournament(11)">Join Now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. WALLET VIEW -->
+        <div id="view-wallet" class="view">
+            <div class="wallet-card">
+                <div style="color: var(--text-sub); font-size: 12px;">Total Balance</div>
+                <div class="balance-main">₹ <span id="wallet-balance">20</span></div>
+                <div class="balance-sub">
+                    <span>Deposit: ₹15</span>
+                    <span>Winnings: ₹5</span>
+                </div>
+                <div class="wallet-actions">
+                    <button class="btn-wallet btn-buy" onclick="addMoney(50)">Recharge ₹50</button>
+                    <button class="btn-wallet btn-withdraw" onclick="alert('Withdraw Request Sent!')">Withdraw</button>
+                </div>
+            </div>
+
+            <div class="section-title">Quick Recharge</div>
+            <div class="amount-grid">
+                <button class="amt-btn" onclick="addMoney(20)">₹20</button>
+                <button class="amt-btn" onclick="addMoney(50)">₹50</button>
+                <button class="amt-btn" onclick="addMoney(100)">₹100</button>
+            </div>
+        </div>
+
+        <!-- 4. LEADERBOARD VIEW -->
+        <div id="view-leaderboard" class="view">
+            <div class="section-title">Top Players Leaderboard</div>
+            <div class="menu-list">
+                <div class="menu-item">
+                    <div class="menu-item-left"><strong style="color:var(--gold)">#1</strong> <span>jaja</span></div>
+                    <span style="color:var(--gold); font-weight:bold;">🪙 17,336</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-item-left"><strong style="color:#c0c0c0">#2</strong> <span>ariyan_gamer</span></div>
+                    <span style="color:var(--gold); font-weight:bold;">🪙 14,179</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-item-left"><strong style="color:#cd7f32">#3</strong> <span>sahusuraj</span></div>
+                    <span style="color:var(--gold); font-weight:bold;">🪙 13,481</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. MENU VIEW -->
+        <div id="view-menu" class="view">
+            <div class="menu-list">
+                <div class="menu-item" onclick="switchView('wallet')"><div class="menu-item-left"><i class="fas fa-wallet"></i> My Wallet</div><i class="fas fa-chevron-right"></i></div>
+                <div class="menu-item" onclick="switchView('leaderboard')"><div class="menu-item-left"><i class="fas fa-trophy"></i> Top Players</div><i class="fas fa-chevron-right"></i></div>
+                <div class="menu-item" onclick="alert('Contact via Telegram @support')"><div class="menu-item-left"><i class="fas fa-headset"></i> Contact Us</div><i class="fas fa-chevron-right"></i></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+        <div class="nav-item" onclick="switchView('wallet')">
+            <i class="fas fa-gift"></i><span>Earn</span>
+        </div>
+        <div class="nav-item" onclick="switchView('leaderboard')">
+            <i class="fas fa-trophy"></i><span>Leaderboard</span>
+        </div>
+        <div class="nav-item active" id="nav-home" onclick="switchView('home')">
+            <i class="fas fa-home"></i><span>Home</span>
+        </div>
+        <div class="nav-item" onclick="switchView('menu')">
+            <i class="fas fa-ellipsis-h"></i><span>Menu</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentCoins = 20;
+
+    function switchView(viewName) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById('view-' + viewName);
+        if(target) target.classList.add('active');
+
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        if(viewName === 'home') {
+            document.getElementById('nav-home').classList.add('active');
+        }
+    }
+
+    function addMoney(amt) {
+        currentCoins += amt;
+        updateCoinsDisplay();
+        alert(`Successfully added ₹${amt} to your Wallet!`);
+    }
+
+    function joinTournament(fee) {
+        if(currentCoins >= fee) {
+            currentCoins -= fee;
+            updateCoinsDisplay();
+            alert("Badhai ho! Aap tournament mein successfully register ho gaye hain! 🎉");
+        } else {
+            alert("Aapke wallet mein balance kam hai! Pehle recharge karein.");
+            switchView('wallet');
+        }
+    }
+
+    function updateCoinsDisplay() {
+        document.getElementById('user-coins').innerText = currentCoins;
+        document.getElementById('wallet-balance').innerText = currentCoins;
+    }
+</script>
+
+</body>
+</html>
