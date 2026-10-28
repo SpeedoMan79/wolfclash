@@ -8,16 +8,16 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Serve static HTML/CSS files from 'public' folder
+// Static files (CSS, Images etc.) ke liye
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Upstash Redis Connection (Render Environment Variables se connect hoga)
+// Upstash Redis Connection
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// Initial Setup (Agar database khali ho)
+// Initial Setup
 async function initData() {
     try {
         const user = await redis.get('user_profile');
@@ -35,6 +35,16 @@ async function initData() {
     }
 }
 initData();
+
+// --- DIRECT ROUTES (Yeh error fix karega) ---
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+// -------------------------------------------
 
 // API: Get User Profile
 app.get('/api/user', async (req, res) => {
