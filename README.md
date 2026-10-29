@@ -69,3 +69,9 @@ Free Render service 15 min inactivity ke baad sleep hota hai (pehla load slow). 
 
 ## v4 Premium UI
 `assets/premium.css` is a visual layer loaded after the built-in styles in `index.html` (navy/black base, blue-cyan-purple accents, glass header, floating bottom nav, glow buttons, gradient-edge cards, motion with reduced-motion support). To revert the look, delete the `<link ... premium.css>` line in `index.html`. Admin panel styling is unchanged.
+
+## v5 Orange-Dark UI
+- `assets/premium.css` ab poora orange + dark theme hai (Outfit font, floating nav, slider, podium leaderboard). Emoji hata kar SVG icons/avatars use hue hain.
+- Home: swipe + auto slider (admin banners, na ho to default slides), balance card, Add Cash / Refer tiles, My Contests, promo banner, tournaments grid, Tutorial popup.
+- Admin -> Settings & Images: login background, Add Cash tile, Refer tile, promo banner, logo, slider banners. Games / matches / notifications ki image unke forms me.
+- Purane emoji avatar wale users ko naam ke pehle akshar wala avatar milta hai.

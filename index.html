@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050a18">
 <title>Arena Battle</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#070d1f;--s1:#101a33;--s2:#16223f;--s3:#1d2b50;--line:#ffffff14;--tx:#e8eeff;--mu:#8fa0c8;
 --ac:#6a5cff;--ac2:#00d2ff;--gold:#ffc233;--g:#2ee59d;--r:#ff4d6d;--grad:linear-gradient(135deg,#6a5cff,#00b8ff)}
@@ -127,11 +127,13 @@ let S={},U=null,view='home',P={},stack=[],slideT=null,cdT=null;
 const tk=()=>{try{return localStorage.getItem('tk')}catch{return null}};
 const setTk=v=>{try{v?localStorage.setItem('tk',v):localStorage.removeItem('tk')}catch{}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const IC={home:'<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9M12 8c-2-4-6-3-5 0 .5 1.5 3 1 5 0zM12 8c2-4 6-3 5 0-.5 1.5-3 1-5 0z"/>',trophy:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',menu:'<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',wallet:'<path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z"/><circle cx="16" cy="14.5" r="1.2"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0"/>',headset:'<path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v5H5a1 1 0 0 1-1-1zM20 14h-3v5h2a1 1 0 0 0 1-1z"/>',help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',power:'<path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/>',chev:'<path d="M9 6l6 6-6 6"/>',back:'<path d="M15 6l-6 6 6 6"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',refresh:'<path d="M20 11a8 8 0 0 0-14-4M4 4v4h4M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/>',check:'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',plus:'<path d="M12 5v14M5 12h14"/>',out:'<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>',tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1"/>',book:'<path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4zM4 16a4 4 0 0 1 4-4h12"/>',sword:'<path d="M14 4l6-1-1 6-9 9-3-3zM6 15l-3 3 3 3 3-3"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'};
+const IC={play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/>',mega:'<path d="M3 10v4h3l7 4V6L6 10zM17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/>',crown:'<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>',star:'<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.300 6.500 20.200l1-6.200L3 9.600l6.200-.9z"/>',bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',flame:'<path d="M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 3-6 1 1 2 1 3-5z"/>',home:'<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v9h14v-9M12 8c-2-4-6-3-5 0 .5 1.5 3 1 5 0zM12 8c2-4 6-3 5 0-.5 1.5-3 1-5 0z"/>',trophy:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',menu:'<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>',wallet:'<path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z"/><circle cx="16" cy="14.5" r="1.2"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0"/>',headset:'<path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v5H5a1 1 0 0 1-1-1zM20 14h-3v5h2a1 1 0 0 0 1-1z"/>',help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',power:'<path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/>',chev:'<path d="M9 6l6 6-6 6"/>',back:'<path d="M15 6l-6 6 6 6"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',refresh:'<path d="M20 11a8 8 0 0 0-14-4M4 4v4h4M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/>',check:'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',plus:'<path d="M12 5v14M5 12h14"/>',out:'<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>',tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1"/>',book:'<path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4zM4 16a4 4 0 0 1 4-4h12"/>',sword:'<path d="M14 4l6-1-1 6-9 9-3-3zM6 15l-3 3 3 3 3-3"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'};
 const ico=(n,c)=>`<svg class="i" viewBox="0 0 24 24" ${c?`style="color:${c}"`:''}>${IC[n]||''}</svg>`;
 const G=['#6a5cff','#00b8ff','#16c784','#ff8a3d','#ff4d6d','#b266ff','#ffc233'];
 const coin=()=>'<span class="coin">₹</span>';
-const AVS=['😎','🔥','👑','🐺','🦅','🐯','💀','🎮','⚡','🥷','🦁','🚀'];
+const AVS=['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12'],AVI=['sword','bolt','crown','shield','star','flame','target','trophy','bolt','sword','crown','star'],AVG=['#ff7a1a,#ff3d00','#ffb347,#ff7a1a','#ff9f43,#e8590c','#f97316,#9a3412','#fbbf24,#f97316','#fb923c,#c2410c'];
+const avh=(k,n)=>{const m=/^a(\d+)$/.exec(k||'');const x=m?+m[1]-1:[...String(n||'')].reduce((a,c)=>a+c.charCodeAt(0),0)%12;return `<span class="avt" style="background:linear-gradient(135deg,${AVG[x%6]})">${m?ico(AVI[x%12]):esc(String(n||'?')[0]||'?').toUpperCase()}</span>`};
+function tutorial(){modal(`<h3>How to play</h3><div class="steps">${[['plus','Add Cash','Wallet me paisa daalo'],['sword','Join a contest','Game chuno, slot pick karo, entry do'],['target','Play the match','Room ID aur password milne par game me jao'],['trophy','Win and withdraw','Rank aur kills ka prize wallet me aata hai']].map((x,i)=>`<div><span>${ico(x[0])}</span><p><b>${i+1}. ${x[1]}</b><small>${x[2]}</small></p></div>`).join('')}</div><button onclick="closeM()">Got it</button>`)}
 const fmtT=t=>new Date(t).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
 const rs=n=>'₹'+(Math.round(n*100)/100);
 
@@ -146,13 +148,13 @@ async function api(p,body){
 function toast(m){document.querySelectorAll('.toast').forEach(x=>x.remove());const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
 function modal(h){closeM();const d=document.createElement('div');d.className='modal';d.innerHTML=`<div class="box">${h}</div>`;d.addEventListener('click',e=>{if(e.target==d)closeM()});document.body.appendChild(d)}
 function closeM(){document.querySelectorAll('.modal').forEach(x=>x.remove())}
-function maint(m){clearInterval(slideT);clearInterval(cdT);$('#app').innerHTML=`<div class="maint"><b>🛠️</b><h2 style="margin:10px 0">Maintenance</h2><p style="color:var(--mu)">${esc(m||S.maintenanceMsg||'Thodi der baad aao')}</p><button class="sm" style="margin-top:20px" onclick="location.reload()">Retry</button></div>`}
+function maint(m){clearInterval(slideT);clearInterval(cdT);$('#app').innerHTML=`<div class="maint"><b>${ico('shield')}</b><h2 style="margin:10px 0">Maintenance</h2><p style="color:var(--mu)">${esc(m||S.maintenanceMsg||'Thodi der baad aao')}</p><button class="sm" style="margin-top:20px" onclick="location.reload()">Retry</button></div>`}
 
 function head(t,back,right){return `<header>${back?`<div class="back" onclick="goBack()">${ico('back')}</div>`:''}<h1>${t}</h1>${right||''}</header>`}
 function go(v,p){stack.push([view,P]);view=v;P=p||{};render()}
 function goBack(){const s=stack.pop();if(s){view=s[0];P=s[1]}else{view='home';P={}}render()}
 function tab(v){stack=[];view=v;P={};render()}
-function navbar(){const t=[['earn','gift','Earn'],['board','trophy','Ranks'],['home','home','Home'],['wallet','wallet','Wallet'],['menu','menu','Menu']];return `<nav>${t.map(x=>`<div class="${view==x[0]?'on':''}" onclick="tab('${x[0]}')">${ico(x[1])}${x[2]}</div>`).join('')}</nav>`}
+function navbar(){const t=[['board','chart','Ranks'],['notif','mega','Updates'],['home','home',''],['wallet','wallet','Wallet'],['menu','user','Profile']];return `<nav>${t.map(x=>`<div class="${view==x[0]?'on':''}" onclick="tab('${x[0]}')">${ico(x[1])}${x[2]?`<span>${x[2]}</span>`:''}</div>`).join('')}</nav>`}
 
 /* ---------- AUTH ---------- */
 async function boot(){
@@ -167,16 +169,16 @@ async function boot(){
 }
 function authView(signup){
   clearInterval(slideT);clearInterval(cdT);
-  const ref=new URLSearchParams(location.search).get('ref')||'';
-  $('#app').innerHTML=`<div class="auth"><div class="logo">${S.logo?`<img src="${esc(S.logo)}" style="width:100%;height:100%;border-radius:26px;object-fit:cover">`:'🎮'}</div><h1>${esc(S.appName||'Arena Battle')}</h1><p class="s">${signup?'Naya account banao aur khelna shuru karo':'Wapas aao, champion!'}</p>
-  <label>Username</label><input id="u" placeholder="username" autocapitalize="none" autocomplete="username">
-  <label>Password</label><input id="p" type="password" placeholder="••••••" autocomplete="${signup?'new-password':'current-password'}" onkeydown="if(event.key=='Enter')doAuth(${!!signup})">
-  ${signup?`<label>Referral code (optional)</label><input id="rf" placeholder="friend ka username" value="${esc(ref)}" autocapitalize="none">`:''}
+  const ref=new URLSearchParams(location.search).get('ref')||'',im=S.images||{};
+  $('#app').innerHTML=`<div class="auth" ${im.loginBg?`style="background-image:linear-gradient(#0b0b0fcc,#0b0b0f 78%),url('${esc(im.loginBg)}');background-size:cover;background-position:top"`:''}><div class="logo">${S.logo?`<img src="${esc(S.logo)}" style="width:100%;height:100%;border-radius:26px;object-fit:cover">`:ico('sword')}</div><h1>${esc(S.appName||'Arena Battle')}</h1><p class="s">${signup?'Naya account banao aur khelna shuru karo':'Wapas aao, champion!'}</p>
+  <div class="fld">${ico('user')}<input id="u" placeholder="Username" autocapitalize="none" autocomplete="username"></div>
+  <div class="fld">${ico('lock')}<input id="p" type="password" placeholder="Password" autocomplete="${signup?'new-password':'current-password'}" onkeydown="if(event.key=='Enter')doAuth(${!!signup})"></div>
+  ${signup?`<div class="fld">${ico('gift')}<input id="rf" placeholder="Referral code (optional)" value="${esc(ref)}" autocapitalize="none"></div>`:''}
   <button onclick="doAuth(${!!signup})">${signup?'Create account':'Login'}</button>
   <p style="text-align:center;margin-top:18px;color:var(--mu);font-size:14px">${signup?'Pehle se account hai? <a onclick="authView()">Login</a>':'Naye ho? <a onclick="authView(1)">Sign up</a>'}</p></div>`}
 async function doAuth(s){
   try{const r=await api(s?'/signup':'/login',{username:$('#u').value,password:$('#p').value,ref:s?$('#rf').value:''});
-  setTk(r.token);U=await api('/stats');view='home';stack=[];P={};history.replaceState({},'','/');render();if(s)toast('Welcome! 🎉')}catch(e){toast(e.message)}}
+  setTk(r.token);U=await api('/stats');view='home';stack=[];P={};history.replaceState({},'','/');render();if(s)toast('Welcome! ')}catch(e){toast(e.message)}}
 function logout(){setTk(null);U=null;stack=[];view='home';authView()}
 
 /* ---------- RENDER ---------- */
@@ -184,49 +186,57 @@ async function render(){
   const a=$('#app');clearInterval(slideT);clearInterval(cdT);scrollTo(0,0);
   if(!a.dataset.k||a.dataset.k!=view){a.innerHTML=head('')+`<div class="wrap"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>`+navbar()}
   a.dataset.k=view;
-  try{await (V[view]||V.home)(a)}catch(e){if(e.message&&!/Login again|aintenance/.test(e.message)){a.innerHTML=head('Error',1)+`<div class="wrap"><div class="empty"><b>⚠️</b>${esc(e.message)}<button class="sm" style="margin-top:16px" onclick="render()">Retry</button></div></div>`}}
+  try{await (V[view]||V.home)(a)}catch(e){if(e.message&&!/Login again|aintenance/.test(e.message)){a.innerHTML=head('Error',1)+`<div class="wrap"><div class="empty"><b>${ico('info')}</b>${esc(e.message)}<button class="sm" style="margin-top:16px" onclick="render()">Retry</button></div></div>`}}
   startCd()}
 function startCd(){const f=()=>document.querySelectorAll('[data-cd]').forEach(e=>{const d=+e.dataset.cd-Date.now();if(d<=0){e.textContent='Starting…';return}const h=Math.floor(d/36e5),m=Math.floor(d%36e5/6e4),s=Math.floor(d%6e4/1e3);e.textContent=(h?h+'h ':'')+m+'m '+String(s).padStart(2,'0')+'s'});f();cdT=setInterval(f,1000)}
 
 const V={
 async home(a){
   const [g,st]=await Promise.all([api('/games'),api('/stats')]);U=st;
-  const sl=S.banners&&S.banners.length;
-  a.innerHTML=`<header><div class="av">${esc(st.avatar)}</div><div class="hello"><small>Welcome back</small><b>${esc(st.username)}</b></div><div class="pill" onclick="tab('wallet')">${coin()}${st.total}</div><div class="ibtn" onclick="go('notif')">${ico('bell')}</div></header>
-  <div class="wrap">
-  ${S.announcement?`<div class="marq">📢<span>${esc(S.announcement)}</span></div>`:''}
-  ${sl?`<div class="slides" id="sl">${S.banners.map((b,i)=>`<div class="sl ${i?'':'on'}" style="background-image:url('${esc(b.img)}')" ${b.link?`onclick="window.open('${esc(b.link)}','_blank')"`:''}></div>`).join('')}<div class="dots">${S.banners.map((b,i)=>`<i class="${i?'':'on'}"></i>`).join('')}</div></div>`:''}
-  <div class="qa">
-   <div onclick="go('recharge')"><span style="background:#16c784">${ico('plus')}</span>Add Cash</div>
-   <div onclick="go('withdraw')"><span style="background:#ff4d6d">${ico('out')}</span>Withdraw</div>
-   <div onclick="daily()"><span style="background:#ff8a3d">${ico('gift')}</span>${st.dailyDone?'Claimed ✓':'Daily'}</div>
-   <div onclick="tab('earn')"><span style="background:#6a5cff">${ico('tag')}</span>Promo</div></div>
+  const im=S.images||{},lvl=1+Math.floor((st.matches||0)/5);
+  const DS=[['Instant Withdrawal','Jeeto aur paisa seedha apne account me','d1',"go('withdraw')"],['Refer & Earn','Dost ko invite karo, bonus kamao','d2',"tab('earn')"],['Daily Tournaments','Roz naye contests, bade prizes','d3',"document.getElementById('gm').scrollIntoView({behavior:'smooth'})"]];
+  const sl=(S.banners&&S.banners.length)?S.banners.map(b=>`<div class="sli" style="background-image:url('${esc(b.img)}')" ${b.link?`onclick="window.open('${esc(b.link)}','_blank')"`:''}></div>`):DS.map(d=>`<div class="sli ${d[2]}" onclick="${d[3]}"><div><h3>${d[0]}</h3><p>${d[1]}</p></div><span class="sic">${ico('trophy')}</span></div>`);
+  const bg=k=>im[k]?`style="background-image:linear-gradient(#0000,#000b),url('${esc(im[k])}')"`:'';
+  a.innerHTML=`<div class="hd"><div class="ibtn" onclick="tab('menu')">${ico('menu')}</div><div class="hello"><small>Welcome,</small><b>${esc(st.username)}</b><span class="lvl">Level ${lvl}</span></div><div class="tut" onclick="tutorial()">${ico('play')}Tutorial</div></div>
+  <div class="wrap" style="padding-top:6px">
+  ${S.announcement?`<div class="marq">${ico('mega')}<span>${esc(S.announcement)}</span></div>`:''}
+  <div class="sld" id="sl"><div class="trk">${sl.join('')}</div></div><div class="dots" id="dts">${sl.map((_,i)=>`<i class="${i?'':'on'}"></i>`).join('')}</div>
+  <div class="trio"><div class="bcard" onclick="tab('wallet')"><div class="bl">${ico('wallet')}TOTAL BALANCE</div><div class="bv">${rs(st.total)}</div><div class="bc"><span class="w">Win ${rs(st.win)}</span><span class="d">Dep ${rs(st.dep)}</span></div></div>
+   <div class="tile t1" ${bg('addCash')} onclick="go('recharge')"><span class="ti">${ico('plus')}</span><b>ADD CASH</b></div>
+   <div class="tile t2" ${bg('refer')} onclick="tab('earn')"><em>New</em><span class="ti">${ico('gift')}</span><b>REFER &amp; EARN</b></div></div>
+  <div class="h2">My Contests<small onclick="go('my',{s:'upcoming'})" style="color:var(--ac);cursor:pointer">View All ${ico('chev')}</small></div>
+  <div class="mm"><div onclick="go('my',{s:'ongoing'})"><span>${ico('play')}</span>Ongoing<small>Live</small></div><div onclick="go('my',{s:'upcoming'})"><span>${ico('cal')}</span>Upcoming<small>Soon</small></div><div onclick="go('my',{s:'resulted'})"><span>${ico('check')}</span>Result<small>Done</small></div></div>
+  <div class="promo" ${bg('promo')}><div><h3>Play More, Win More!</h3><p>Big Prizes, Exciting Tournaments</p><button class="sm" onclick="document.getElementById('gm').scrollIntoView({behavior:'smooth'})">EXPLORE NOW</button></div><span class="sic">${ico('trophy')}</span></div>
+  <div class="qa"><div onclick="go('withdraw')"><span>${ico('out')}</span>Withdraw</div><div onclick="daily()"><span>${ico('gift')}</span>${st.dailyDone?'Claimed':'Daily Reward'}</div><div onclick="tab('earn')"><span>${ico('tag')}</span>Promo Code</div></div>
   <div class="stats3"><div><b>${st.matches}</b><small>Matches</small></div><div><b>${st.kills}</b><small>Kills</small></div><div><b>${rs(st.earning)}</b><small>Earned</small></div></div>
-  ${S.depositBonus&&S.depositBonus.length?`<div class="hero"><h2>🔥 DEPOSIT BONUS</h2><table><tr><th>DEPOSIT</th><th>BONUS</th><th>TOTAL</th></tr>${S.depositBonus.map(b=>`<tr><td>${b.dep}</td><td>+${b.bonus}</td><td>${b.dep+b.bonus}</td></tr>`).join('')}</table></div>`:''}
-  <div class="h2">My Matches</div>
-  <div class="mm"><div onclick="go('my',{s:'ongoing'})"><span style="background:#16c784">${ico('refresh')}</span>Ongoing</div><div onclick="go('my',{s:'upcoming'})"><span style="background:#00b8ff">${ico('cal')}</span>Upcoming</div><div onclick="go('my',{s:'resulted'})"><span style="background:#6a5cff">${ico('check')}</span>Completed</div></div>
-  <div class="h2">Esports Games <small>${g.length} games</small></div>
-  <div class="games">${g.map((x,i)=>`<div class="game" onclick="go('matches',{g:'${x.id}',n:${esc(JSON.stringify(x.name)).replace(/&quot;/g,'&quot;')},s:'upcoming'})"><div class="im" style="${x.image?`background-image:linear-gradient(#0000,#000a),url('${esc(x.image)}')`:`background-image:linear-gradient(135deg,${G[i%G.length]},#0b1430)`}">${esc(x.name)}</div><div class="t">Contests<i>● ${x.count}</i></div></div>`).join('')||'<div class="empty">No games yet</div>'}</div>
+  ${S.depositBonus&&S.depositBonus.length?`<div class="hero"><h2>DEPOSIT BONUS</h2><table><tr><th>DEPOSIT</th><th>BONUS</th><th>TOTAL</th></tr>${S.depositBonus.map(b=>`<tr><td>${b.dep}</td><td>+${b.bonus}</td><td>${b.dep+b.bonus}</td></tr>`).join('')}</table></div>`:''}
+  <div class="sec" id="gm"><b>GAME-Z TOURNAMENTS</b><small>Big Winnings For All</small></div>
+  <div class="games">${g.map((x,i)=>`<div class="game" onclick="go('matches',{g:'${x.id}',n:${esc(JSON.stringify(x.name))},s:'upcoming'})"><div class="im" style="${x.image?`background-image:linear-gradient(#0000 45%,#000d),url('${esc(x.image)}')`:`background-image:linear-gradient(160deg,${G[i%G.length]},#0b0b0f)`}"><span class="cnt">${x.count} live</span><span class="gn">${esc(x.name)}</span></div></div>`).join('')||'<div class="empty">No games yet</div>'}</div>
   </div>`+navbar();
-  if(sl&&S.banners.length>1){let k=0;slideT=setInterval(()=>{const s=document.querySelectorAll('#sl .sl'),d=document.querySelectorAll('#sl .dots i');if(!s.length)return;s[k].classList.remove('on');d[k].classList.remove('on');k=(k+1)%s.length;s[k].classList.add('on');d[k].classList.add('on')},3500)}
+  const trk=document.querySelector('#sl .trk'),dt=document.querySelectorAll('#dts i');
+  if(trk){const cur=()=>Math.round(trk.scrollLeft/(trk.firstChild.offsetWidth+10));trk.addEventListener('scroll',()=>{const k=cur();dt.forEach((d,i)=>d.classList.toggle('on',i==k))});
+   if(dt.length>1)slideT=setInterval(()=>{const n=(cur()+1)%dt.length;trk.scrollTo({left:n*(trk.firstChild.offsetWidth+10),behavior:'smooth'})},3800)}
 },
 async matches(a){const my=view=='my';return listM(a,my)},
 async my(a){return listM(a,true)},
 async board(a){
   const r=P.r||'monthly';const l=await api('/leaderboard?range='+r);
+  const pod=[l[1],l[0],l[2]],pc=['p2','p1','p3'],pn=[2,1,3];
   a.innerHTML=head('Leaderboard')+`<div class="tabs">${['weekly','monthly','fulltime'].map(s=>`<div class="${r==s?'on':''}" onclick="P={r:'${s}'};render()">${s[0].toUpperCase()+s.slice(1)}</div>`).join('')}</div>
-  <div class="wrap">${l.map((x,i)=>`<div class="rank ${i<3?'t'+(i+1):''}"><div class="n">${i+1}</div><b>${esc(x.name)}</b><div class="v">${coin()}${x.win}</div></div>`).join('')||'<div class="empty"><b>🏆</b>Abhi koi winner nahi</div>'}
-  <button class="o" onclick="go('top')">View Top Players →</button></div>`+navbar()},
+  <div class="wrap">${l.length?`<div class="pod">${pod.map((x,i)=>x?`<div class="${pc[i]}"><div class="crw">${i==1?ico('crown'):''}</div>${avh('',x.name)}<b>${esc(x.name)}</b><span>${coin()}${x.win}</span><div class="stp">${pn[i]}</div></div>`:'<div></div>').join('')}</div>`:''}
+  ${l.slice(3).map((x,i)=>`<div class="rank"><div class="n">${i+4}</div>${avh('',x.name)}<b>${esc(x.name)}</b><div class="v">${coin()}${x.win}</div></div>`).join('')}
+  ${l.length?'':`<div class="empty"><b>${ico('trophy')}</b>Abhi koi winner nahi</div>`}
+  <button class="o" onclick="go('top')">View Top Players</button></div>`+navbar()},
 async top(a){
   const l=await api('/top-players');
-  a.innerHTML=head('Top Players',1)+`<div class="wrap">${l.map((x,i)=>`<div class="rank ${i<3?'t'+(i+1):''}"><div class="n">${i+1}</div><div style="font-size:24px">${esc(x.avatar)}</div><b>${esc(x.name)}<small style="display:block;color:var(--mu);font-weight:400;font-size:11px">${x.matches} matches • ${x.kills} kills</small></b><div class="v">${coin()}${x.earning}</div></div>`).join('')||'<div class="empty">No players yet</div>'}</div>`},
+  a.innerHTML=head('Top Players',1)+`<div class="wrap">${l.map((x,i)=>`<div class="rank ${i<3?'t'+(i+1):''}"><div class="n">${i+1}</div>${avh(x.avatar,x.name)}<b>${esc(x.name)}<small style="display:block;color:var(--mu);font-weight:400;font-size:11px">${x.matches} matches • ${x.kills} kills</small></b><div class="v">${coin()}${x.earning}</div></div>`).join('')||'<div class="empty">No players yet</div>'}</div>`},
 async earn(a){
   const st=await api('/stats');U=st;
-  a.innerHTML=head('Refer & Earn')+`<div class="wrap"><div class="ref"><div style="font-size:64px">🎁</div><h2 style="margin:8px 0">Dost ko invite karo</h2><p style="opacity:.9;font-size:14px">Friend aapke code se join kare aur pehla paid match khele — aapko <b>${S.referrerBonus} coins</b> bonus wallet me. Friend ko bhi <b>${S.signupBonus} coins</b> register bonus!</p>
+  a.innerHTML=head('Refer & Earn')+`<div class="wrap"><div class="ref"><div class="rfi">${ico('gift')}</div><h2 style="margin:8px 0">Dost ko invite karo</h2><p style="opacity:.9;font-size:14px">Friend aapke code se join kare aur pehla paid match khele — aapko <b>${S.referrerBonus} coins</b> bonus wallet me. Friend ko bhi <b>${S.signupBonus} coins</b> register bonus!</p>
   <div class="code"><span>${esc(st.username)}</span><span onclick="copyT('${esc(st.username)}')" style="cursor:pointer">${ico('copy')}</span></div>
   <div class="sh"><button style="background:#1da1d2" onclick="share('t')">Telegram</button><button style="background:#1877f2" onclick="share('f')">Facebook</button><button style="background:#1fa800" onclick="share('w')">WhatsApp</button></div></div>
   <div class="stats3"><div><b>${st.referrals}</b><small>Friends joined</small></div><div><b>${S.referrerBonus}</b><small>Per referral</small></div><div><b>${st.bonus}</b><small>Bonus wallet</small></div></div>
-  <div class="h2">Daily Reward</div><div class="card" style="display:flex;align-items:center;gap:12px"><div style="font-size:34px">🎁</div><div style="flex:1"><b>${S.dailyReward} coin${S.dailyReward==1?'':'s'} har roz</b><br><small style="color:var(--mu)">Roz aao, free bonus lo</small></div><button class="sm g" ${st.dailyDone?'disabled':''} onclick="daily()">${st.dailyDone?'Claimed':'Claim'}</button></div>
+  <div class="h2">Daily Reward</div><div class="card" style="display:flex;align-items:center;gap:12px"><div class="rfi s">${ico('gift')}</div><div style="flex:1"><b>${S.dailyReward} coin${S.dailyReward==1?'':'s'} har roz</b><br><small style="color:var(--mu)">Roz aao, free bonus lo</small></div><button class="sm g" ${st.dailyDone?'disabled':''} onclick="daily()">${st.dailyDone?'Claimed':'Claim'}</button></div>
   <div class="h2">Promo Code</div><div class="card"><input id="pc" placeholder="Enter promo code" style="text-transform:uppercase"><button onclick="promo()">Apply code</button></div></div>`+navbar()},
 async wallet(a){
   const w=await api('/wallet');U=w;
@@ -245,15 +255,15 @@ async withdraw(a){
   <div class="h2">Withdrawal History</div>${w.withdrawals.map(d=>`<div class="hist"><div><span>Request ID</span><b>#${d.id}</b></div><div><span>UPI</span><b>${esc(d.upi)}</b></div><div><span>Amount</span><b>₹${d.amount}</b></div><div><span>Status</span><span class="st ${d.status}">${d.status}</span></div></div>`).join('')||'<div class="empty">No withdrawals yet</div>'}</div>`;wdPrev()},
 async menu(a){
   const st=await api('/stats');U=st;
-  const L=[['wallet','My Wallet','wallet',0],['prof','My Profile','user',1],['stats','My Statistics','chart',2],['top','Top Players','trophy',3],['notif','Notifications','bell',4],['support','Help & Support','headset',5],['rules','Rules','book',6],['page:faq','FAQ','help',0],['page:about','About Us','info',1],['page:privacy','Privacy Policy','lock',2],['page:terms','Terms & Conditions','shield',3]];
-  a.innerHTML=head('Menu')+`<div class="wrap"><div class="pf"><div class="big">${esc(st.avatar)}</div><h2>${esc(st.username)}</h2><small style="color:var(--mu)">${esc(st.ign||'Set your in-game name')}</small></div>
+  const L=[['earn','Refer & Earn','gift',3],['wallet','My Wallet','wallet',0],['prof','My Profile','user',1],['stats','My Statistics','chart',2],['top','Top Players','trophy',3],['notif','Notifications','bell',4],['support','Help & Support','headset',5],['rules','Rules','book',6],['page:faq','FAQ','help',0],['page:about','About Us','info',1],['page:privacy','Privacy Policy','lock',2],['page:terms','Terms & Conditions','shield',3]];
+  a.innerHTML=head('Profile')+`<div class="wrap"><div class="pf"><div class="big">${avh(st.avatar,st.username)}</div><h2>${esc(st.username)}</h2><small style="color:var(--mu)">${esc(st.ign||'Set your in-game name')}</small></div>
   <div class="stats3" style="margin-top:14px"><div><b>${st.matches}</b><small>Matches</small></div><div><b>${st.kills}</b><small>Kills</small></div><div><b>${rs(st.earning)}</b><small>Earning</small></div></div>
   ${L.map(x=>`<div class="li" onclick="mi('${x[0]}')"><div class="ic" style="background:${G[x[3]%G.length]}">${ico(x[2])}</div>${x[1]}<div class="ch">${ico('chev')}</div></div>`).join('')}
   ${(S.telegram||S.whatsapp)?`<div class="h2">Community</div><div class="sh" style="grid-template-columns:1fr 1fr">${S.telegram?`<button style="background:#1da1d2" onclick="window.open('${esc(S.telegram)}','_blank')">Telegram</button>`:''}${S.whatsapp?`<button style="background:#1fa800" onclick="window.open('${esc(S.whatsapp)}','_blank')">WhatsApp</button>`:''}</div>`:''}
   <button class="r" style="margin-top:14px" onclick="logout()">Logout</button></div>`+navbar()},
 async prof(a){
   const st=await api('/stats');U=st;window._av=st.avatar;
-  a.innerHTML=head('My Profile',1)+`<div class="wrap"><div class="card"><label>Choose avatar</label><div class="avs">${AVS.map(x=>`<div class="${x==st.avatar?'on':''}" onclick="pickAv(this,'${x}')">${x}</div>`).join('')}</div>
+  a.innerHTML=head('My Profile',1)+`<div class="wrap"><div class="card"><label>Choose avatar</label><div class="avs">${AVS.map(x=>`<div class="${x==st.avatar?'on':''}" onclick="pickAv(this,'${x}')">${avh(x)}</div>`).join('')}</div>
   <label>Username</label><input value="${esc(st.username)}" disabled><label>In-game name (default for matches)</label><input id="ig" value="${esc(st.ign)}" placeholder="Free Fire name"><button onclick="saveProf()">Save profile</button></div>
   <div class="h2">Change Password</div><div class="card"><input id="op" type="password" placeholder="Old password"><input id="np" type="password" placeholder="New password (min 6)"><button class="o" onclick="chPw()">Update password</button></div></div>`},
 async stats(a){
@@ -263,7 +273,7 @@ async stats(a){
   <div class="card"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mu)"><span>Win rate</span><span>${st.winRate}%</span></div><div class="bar" style="margin-top:8px"><i style="width:${st.winRate}%"></i></div></div></div>`},
 async notif(a){
   const n=await api('/notifications');
-  a.innerHTML=head('Notifications',1)+`<div class="wrap">${n.map(x=>`<div class="card"><b>${esc(x.title)}</b><p style="color:var(--mu);margin-top:5px;font-size:14px;line-height:1.5;white-space:pre-wrap">${esc(x.body)}</p>${x.image?`<img src="${esc(x.image)}" style="width:100%;border-radius:10px;margin-top:8px">`:''}<small style="color:var(--mu);font-size:11px">${fmtT(x.at)}</small></div>`).join('')||'<div class="empty"><b>🔔</b>Abhi kuch nahi</div>'}</div>`},
+  a.innerHTML=head('Updates')+`<div class="wrap">${n.map(x=>`<div class="card"><b>${esc(x.title)}</b><p style="color:var(--mu);margin-top:5px;font-size:14px;line-height:1.5;white-space:pre-wrap">${esc(x.body)}</p>${x.image?`<img src="${esc(x.image)}" style="width:100%;border-radius:10px;margin-top:8px">`:''}<small style="color:var(--mu);font-size:11px">${fmtT(x.at)}</small></div>`).join('')||`<div class="empty"><b>${ico('bell')}</b>Abhi kuch nahi</div>`}</div>`+navbar()},
 async support(a){
   const t=await api('/tickets');
   a.innerHTML=head('Help & Support',1)+`<div class="wrap"><div class="card"><label>Subject</label><input id="ts" placeholder="Payment / Match / Account…"><label>Message</label><textarea id="tm" rows="3" placeholder="Apni problem likho"></textarea><button onclick="newTicket()">Send</button></div>
@@ -278,14 +288,14 @@ async page(a){a.innerHTML=head(P.t,1)+`<div class="wrap"><div class="card" style
 async function listM(a,my){
   const s=P.s||'upcoming';
   const m=await api(my?'/my-matches?status='+s:`/matches?game=${P.g}&status=${s}`);window._M=m;
-  a.innerHTML=head(my?'My Matches':esc(P.n||'Contests'),1)+`<div class="tabs">${['ongoing','upcoming','resulted'].map(x=>`<div class="${s==x?'on':''}" onclick="P.s='${x}';render()">${x=='resulted'?'Completed':x[0].toUpperCase()+x.slice(1)}</div>`).join('')}</div><div class="wrap">${m.map((x,i)=>mcard(x,i)).join('')||`<div class="empty"><b>🎮</b>No ${s} matches</div>`}</div>`}
+  a.innerHTML=head(my?'My Matches':esc(P.n||'Contests'),1)+`<div class="tabs">${['ongoing','upcoming','resulted'].map(x=>`<div class="${s==x?'on':''}" onclick="P.s='${x}';render()">${x=='resulted'?'Completed':x[0].toUpperCase()+x.slice(1)}</div>`).join('')}</div><div class="wrap">${m.map((x,i)=>mcard(x,i)).join('')||`<div class="empty"><b>${ico('sword')}</b>No ${s} matches</div>`}</div>`}
 let SEL=null;const LT='ABCD';
 const slotLbl=(s,p,z)=>z>1?`Team ${s} · ${LT[p]}`:`Slot ${s}`;
 function seatGrid(x,pick){let h='';for(let s=1;s<=x.slots;s++){const c=[];for(let p=0;p<x.size;p++){const t=x.seats.find(z=>z.slot==s&&z.pos==p);c.push(`<div class="seat ${t?(t.me?'me':'tk'):''}" ${t||!pick?'':`onclick="pickSeat(${s},${p},${x.size},this)"`}><b>${x.size>1?LT[p]:s}</b><small>${t?esc(t.ign):'Free'}</small></div>`)}h+=x.size>1?`<div class="team"><span>Team ${s}</span><div class="sr">${c.join('')}</div></div>`:c.join('')}return `<div class="${x.size>1?'teams':'solo'}">${h}</div>`}
 function pickSeat(s,p,z,el){SEL={s,p};document.querySelectorAll('.seat.sel').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');$('#sel').innerHTML='Selected: <b>'+slotLbl(s,p,z)+'</b>'}
 function mcard(x,i){
   const cap=x.capacity,full=x.filled>=cap,pct=Math.round(x.filled/cap*100),C={Solo:'#22e4ff',Duo:'#ffc83d',Squad:'#ff5b2e'}[x.type]||'#22e4ff';
-  return `<div class="card m"><div class="im" onclick="detail(${i})" style="${x.image?`background-image:linear-gradient(#0000 30%,#000c),url('${esc(x.image)}')`:''}"><span class="pz">₹${x.prize}<small>PRIZE POOL</small></span><span class="tag">${x.status=='upcoming'?'⏱ <span data-cd="'+x.time+'"></span>':x.status=='ongoing'?'🔴 LIVE':x.status}</span>${esc(x.title.slice(0,30))}</div>
+  return `<div class="card m"><div class="im" onclick="detail(${i})" style="${x.image?`background-image:linear-gradient(#0000 30%,#000c),url('${esc(x.image)}')`:''}"><span class="pz">₹${x.prize}<small>PRIZE POOL</small></span><span class="tag">${x.status=='upcoming'?'<span data-cd="'+x.time+'"></span>':x.status=='ongoing'?'LIVE':x.status}</span>${esc(x.title.slice(0,30))}</div>
   <div class="bd"><div><span class="ty" style="--c:${C}">${esc(x.type)}</span><small>${fmtT(x.time)} • #${x.id.slice(0,6)}</small></div>
   <div class="g3"><div>ENTRY<b>₹${x.fee}</b></div><div>PER KILL<b>₹${x.perKill}</b></div><div>MAP<b>${esc(x.map||'-')}</b></div></div>
   ${x.room?`<div class="room"><span>Room ID: <b>${esc(x.room.id||'Soon')}</b></span><span>Pass: <b>${esc(x.room.pass||'Soon')}</b></span><span onclick="copyT('${esc(x.room.id)}')" style="cursor:pointer">${ico('copy')}</span></div>`:''}
@@ -295,13 +305,13 @@ function detail(i){const x=window._M[i];modal(`<h3>${esc(x.title)}</h3><p class=
 function joinM(i,ch){const x=window._M[i];SEL=null;
   modal(`<h3>${ch?'Change your slot':'Pick your slot'}</h3><div class="fee"><span>Entry fee <b>₹${x.fee}</b></span><span>Balance <b>₹${U.total}</b></span></div>${ch?'':`<label>In-game name</label><input id="ign" placeholder="Your in-game name" value="${esc(U.ign||'')}">`}<div class="lg" style="margin-top:8px"><i class="lf"></i>Free<i class="lt"></i>Taken<i class="lm"></i>You<i class="ls"></i>Selected</div>${seatGrid(x,1)}<p id="sel" class="mu">${x.size>1?'Team me apni jagah (A/B…) tap karo':'Apna slot number tap karo'}</p><button onclick="confJoin('${x.id}',${!!ch})">${ch?'Move to this slot':'Confirm & Join ₹'+x.fee}</button><button class="o" onclick="closeM()">Cancel</button>${!ch&&U.total<x.fee?'<p style="color:var(--r);font-size:13px;margin-top:10px;text-align:center">Balance kam hai — pehle Add Cash karo</p>':''}`)}
 async function confJoin(id,ch){if(!SEL)return toast('Pehle slot choose karo');try{await api(ch?'/change-slot':'/join',{matchId:id,ign:($('#ign')||{}).value,slot:SEL.s,pos:SEL.p});closeM();toast(ch?'Slot changed ✓':'Joined ✓');U=await api('/stats');render()}catch(e){toast(e.message);if(/slot/i.test(e.message))render()}}
-function bonusPrev(){const v=+$('#am').value;let b=0;(S.depositBonus||[]).slice().sort((x,y)=>y.dep-x.dep).some(t=>{if(v>=t.dep){b=t.bonus;return true}});$('#bp').textContent=b?`🎁 Extra +${b} bonus coins milenge!`:''}
+function bonusPrev(){const v=+$('#am').value;let b=0;(S.depositBonus||[]).slice().sort((x,y)=>y.dep-x.dep).some(t=>{if(v>=t.dep){b=t.bonus;return true}});$('#bp').textContent=b?` Extra +${b} bonus coins milenge!`:''}
 function wdPrev(){const v=+$('#wa').value||0,f=Math.round(v*(S.withdrawFee||0))/100;$('#wp').textContent=S.withdrawFee?`Fee ${S.withdrawFee}% = ₹${f} • You get ₹${v-f}`:''}
 async function recharge(){try{const r=await api('/deposit',{amount:$('#am').value});location.href=r.url}catch(e){toast(e.message)}}
 async function checkPay(id){toast('Payment check ho raha hai…');for(let i=0;i<6;i++){try{const r=await api('/deposit/check/'+id);if(r.status!='pending'){toast(r.status=='approved'?'Deposit added ✓':'Payment '+r.status);return tab('wallet')}}catch{}await new Promise(r=>setTimeout(r,3000))}toast('Abhi pending hai. Thodi der baad check karo.')}
 async function withdraw(){try{await api('/withdraw',{method:$('#mt').value,upi:$('#up').value,amount:$('#wa').value});toast('Request bhej di ✓');render()}catch(e){toast(e.message)}}
-async function daily(){try{const r=await api('/daily',{});toast(`+${r.reward} coins mile 🎁`);U=await api('/stats');render()}catch(e){toast(e.message)}}
-async function promo(){try{const r=await api('/promo',{code:$('#pc').value});toast(`+${r.bonus} bonus coins 🎉`);render()}catch(e){toast(e.message)}}
+async function daily(){try{const r=await api('/daily',{});toast(`+${r.reward} coins mile `);U=await api('/stats');render()}catch(e){toast(e.message)}}
+async function promo(){try{const r=await api('/promo',{code:$('#pc').value});toast(`+${r.bonus} bonus coins `);render()}catch(e){toast(e.message)}}
 function pickAv(el,v){window._av=v;document.querySelectorAll('.avs div').forEach(d=>d.classList.remove('on'));el.classList.add('on')}
 async function saveProf(){try{await api('/profile',{ign:$('#ig').value,avatar:window._av});toast('Saved ✓')}catch(e){toast(e.message)}}
 async function chPw(){try{await api('/password',{old:$('#op').value,new:$('#np').value});toast('Password changed ✓');$('#op').value=$('#np').value=''}catch(e){toast(e.message)}}

@@ -46,7 +46,7 @@ const DEFAULT = () => ({
     signupBonus: 0, referrerBonus: 0, referralMinEntry: 0,
     minDeposit: 10, maxDeposit: 1000, minWithdraw: 50,
     depositBonus: [{ dep: 50, bonus: 10 }, { dep: 100, bonus: 20 }, { dep: 200, bonus: 40 }, { dep: 300, bonus: 50 }, { dep: 500, bonus: 100 }],
-    maintenance: false, maintenanceMsg: 'Under maintenance. Thodi der baad aao.', banners: [], dailyReward: 1, withdrawFee: 0, maxWithdrawPerDay: 1, rules: '1. Hacks/teaming not allowed.\n2. Room ID match se pehle milega.\n3. Admin ka decision final.', telegram: '', whatsapp: '', about: 'About us', faq: 'FAQ', terms: 'Terms & Conditions', privacy: 'Privacy Policy', contact: 'support@example.com'
+    maintenance: false, maintenanceMsg: 'Under maintenance. Thodi der baad aao.', banners: [], images: {}, dailyReward: 1, withdrawFee: 0, maxWithdrawPerDay: 1, rules: '1. Hacks/teaming not allowed.\n2. Room ID match se pehle milega.\n3. Admin ka decision final.', telegram: '', whatsapp: '', about: 'About us', faq: 'FAQ', terms: 'Terms & Conditions', privacy: 'Privacy Policy', contact: 'support@example.com'
   }
 });
 
@@ -154,7 +154,7 @@ app.get('/api/me', wrap(async (req, res) => res.json(pub(user(req)))));
 // ====== PUBLIC / HOME ======
 app.get('/api/settings', wrap(async (req, res) => {
   const s = db.settings;
-  res.json({ maintenance: s.maintenance, maintenanceMsg: s.maintenanceMsg, banners: s.banners, dailyReward: s.dailyReward, withdrawFee: s.withdrawFee, rules: s.rules, telegram: s.telegram, whatsapp: s.whatsapp, appName: s.appName, logo: s.logo, announcement: s.announcement, depositBonus: s.depositBonus, minDeposit: s.minDeposit, maxDeposit: s.maxDeposit, minWithdraw: s.minWithdraw, referrerBonus: s.referrerBonus, signupBonus: s.signupBonus, referralMinEntry: s.referralMinEntry, about: s.about, faq: s.faq, terms: s.terms, privacy: s.privacy, contact: s.contact });
+  res.json({ maintenance: s.maintenance, maintenanceMsg: s.maintenanceMsg, banners: s.banners, images: s.images || {}, dailyReward: s.dailyReward, withdrawFee: s.withdrawFee, rules: s.rules, telegram: s.telegram, whatsapp: s.whatsapp, appName: s.appName, logo: s.logo, announcement: s.announcement, depositBonus: s.depositBonus, minDeposit: s.minDeposit, maxDeposit: s.maxDeposit, minWithdraw: s.minWithdraw, referrerBonus: s.referrerBonus, signupBonus: s.signupBonus, referralMinEntry: s.referralMinEntry, about: s.about, faq: s.faq, terms: s.terms, privacy: s.privacy, contact: s.contact });
 }));
 
 app.get('/api/games', wrap(async (req, res) => {
@@ -429,6 +429,7 @@ app.post('/api/admin/settings', wrap(async (req, res) => {
   ['appName', 'logo', 'announcement', 'maintenanceMsg', 'rules', 'telegram', 'whatsapp', 'about', 'faq', 'terms', 'privacy', 'contact'].forEach(k => { if (typeof s[k] === 'string') db.settings[k] = s[k]; });
   ['dailyReward', 'withdrawFee', 'maxWithdrawPerDay', 'signupBonus', 'referrerBonus', 'referralMinEntry', 'minDeposit', 'maxDeposit', 'minWithdraw'].forEach(k => { if (s[k] !== undefined) db.settings[k] = num(s[k]); });
   if (typeof s.maintenance === 'boolean') db.settings.maintenance = s.maintenance;
+  if (s.images && typeof s.images === 'object') { const o = {}; ['loginBg','addCash','refer','promo','wallet','profile'].forEach(k => { if (typeof s.images[k] === 'string' && s.images[k].length < 600) o[k] = s.images[k].trim(); }); db.settings.images = o; }
   if (Array.isArray(s.banners)) db.settings.banners = s.banners.filter(b => b && b.img).slice(0, 10);
   if (Array.isArray(s.depositBonus)) db.settings.depositBonus = s.depositBonus.map(x => ({ dep: num(x.dep), bonus: num(x.bonus) }));
   await save(); res.json({ ok: true });
@@ -475,10 +476,10 @@ app.get('/api/match/:id', wrap(async (req, res) => {
 }));
 app.get('/api/stats', wrap(async (req, res) => {
   const u = user(req); const wins = db.txns.filter(t => t.uid === u.id && t.type === 'prize').length;
-  res.json({ ...pub(u), wins, winRate: u.matches ? Math.round(wins / u.matches * 100) : 0, ign: u.ign || '', avatar: u.avatar || '😎', dailyDone: u.lastDaily === new Date().toDateString(), referrals: Object.values(db.users).filter(x => x.referredBy === u.id).length });
+  res.json({ ...pub(u), wins, winRate: u.matches ? Math.round(wins / u.matches * 100) : 0, ign: u.ign || '', avatar: u.avatar || 'a1', dailyDone: u.lastDaily === new Date().toDateString(), referrals: Object.values(db.users).filter(x => x.referredBy === u.id).length });
 }));
 app.get('/api/top-players', wrap(async (req, res) => {
-  user(req); res.json(Object.values(db.users).sort((a, b) => b.earning - a.earning).slice(0, 20).map(u => ({ name: u.username, earning: u.earning, kills: u.kills, matches: u.matches, avatar: u.avatar || '😎' })));
+  user(req); res.json(Object.values(db.users).sort((a, b) => b.earning - a.earning).slice(0, 20).map(u => ({ name: u.username, earning: u.earning, kills: u.kills, matches: u.matches, avatar: u.avatar || 'a1' })));
 }));
 app.get('/api/tickets', wrap(async (req, res) => { const u = user(req); res.json(db.tickets.filter(t => t.uid === u.id).reverse()); }));
 app.post('/api/ticket', wrap(async (req, res) => {
