@@ -16,10 +16,9 @@ const {
   ZAPUPI_API = 'https://api.zapupi.com/api', PORT = 3000
 } = process.env;
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN
-});
+const redis = process.env.UPSTASH_REDIS_REST_URL
+  ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
+  : (() => { console.warn('!!! UPSTASH env missing: in-memory store (data restart par ud jayega) !!!'); let v = null; return { get: async () => v, set: async (k, x) => { v = x; } }; })();
 
 const DEFAULT = () => ({
   users: {}, games: [
@@ -27,13 +26,13 @@ const DEFAULT = () => ({
     { id: 'g2', name: 'PER KILL MATCHES', image: '' },
     { id: 'g3', name: 'LONE WOLF 2v2', image: '' }
   ],
-  matches: [], joins: [], deposits: [], withdrawals: [], txns: [], notices: [],
+  matches: [], joins: [], deposits: [], withdrawals: [], txns: [], notices: [], promos: [], tickets: [], logs: [],
   settings: {
     appName: 'Arena Battle', logo: '', announcement: 'Welcome! Fair play karo.',
     signupBonus: 0, referrerBonus: 0, referralMinEntry: 0,
     minDeposit: 10, maxDeposit: 1000, minWithdraw: 50,
     depositBonus: [{ dep: 50, bonus: 10 }, { dep: 100, bonus: 20 }, { dep: 200, bonus: 40 }, { dep: 300, bonus: 50 }, { dep: 500, bonus: 100 }],
-    about: 'About us', faq: 'FAQ', terms: 'Terms & Conditions', privacy: 'Privacy Policy', contact: 'support@example.com'
+    maintenance: false, maintenanceMsg: 'Under maintenance. Thodi der baad aao.', banners: [], dailyReward: 1, withdrawFee: 0, maxWithdrawPerDay: 1, rules: '1. Hacks/teaming not allowed.\n2. Room ID match se pehle milega.\n3. Admin ka decision final.', telegram: '', whatsapp: '', about: 'About us', faq: 'FAQ', terms: 'Terms & Conditions', privacy: 'Privacy Policy', contact: 'support@example.com'
   }
 });
 
@@ -43,6 +42,9 @@ const lock = fn => (chain = chain.then(fn, fn));
 async function load() {
   db = (await redis.get('arenadb')) || DEFAULT();
   if (typeof db === 'string') db = JSON.parse(db);
+  const d = DEFAULT();
+  Object.keys(d).forEach(k => { if (db[k] === undefined) db[k] = d[k]; });
+  Object.keys(d.settings).forEach(k => { if (db.settings[k] === undefined) db.settings[k] = d.settings[k]; });
 }
 const save = () => redis.set('arenadb', JSON.stringify(db));
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -53,6 +55,10 @@ app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/api', (req, res, next) => {
+  if (db && db.settings.maintenance && !req.path.startsWith('/admin') && req.path !== '/settings' && req.path !== '/zapupi/webhook') return res.status(503).json({ error: db.settings.maintenanceMsg });
+  next();
+});
 const wrap = fn => (req, res) =>
   lock(async () => {
     try { await fn(req, res); }
@@ -103,7 +109,7 @@ app.get('/api/me', wrap(async (req, res) => res.json(pub(user(req)))));
 // ====== PUBLIC / HOME ======
 app.get('/api/settings', wrap(async (req, res) => {
   const s = db.settings;
-  res.json({ appName: s.appName, logo: s.logo, announcement: s.announcement, depositBonus: s.depositBonus, minDeposit: s.minDeposit, maxDeposit: s.maxDeposit, minWithdraw: s.minWithdraw, referrerBonus: s.referrerBonus, signupBonus: s.signupBonus, referralMinEntry: s.referralMinEntry, about: s.about, faq: s.faq, terms: s.terms, privacy: s.privacy, contact: s.contact });
+  res.json({ maintenance: s.maintenance, maintenanceMsg: s.maintenanceMsg, banners: s.banners, dailyReward: s.dailyReward, withdrawFee: s.withdrawFee, rules: s.rules, telegram: s.telegram, whatsapp: s.whatsapp, appName: s.appName, logo: s.logo, announcement: s.announcement, depositBonus: s.depositBonus, minDeposit: s.minDeposit, maxDeposit: s.maxDeposit, minWithdraw: s.minWithdraw, referrerBonus: s.referrerBonus, signupBonus: s.signupBonus, referralMinEntry: s.referralMinEntry, about: s.about, faq: s.faq, terms: s.terms, privacy: s.privacy, contact: s.contact });
 }));
 
 app.get('/api/games', wrap(async (req, res) => {
@@ -238,8 +244,11 @@ app.post('/api/withdraw', wrap(async (req, res) => {
   if (amount < db.settings.minWithdraw) fail('Minimum withdraw ₹' + db.settings.minWithdraw);
   if (amount > u.win) fail('Win balance kam hai');
   if (db.withdrawals.some(w => w.uid === u.id && w.status === 'pending')) fail('Ek request pending hai');
+  const today = new Date().toDateString();
+  if (db.withdrawals.filter(w => w.uid === u.id && new Date(w.at).toDateString() === today && w.status !== 'rejected').length >= num(db.settings.maxWithdrawPerDay, 1)) fail('Daily withdraw limit reached');
+  const fee = Math.round(amount * num(db.settings.withdrawFee)) / 100;
   u.win -= amount; tx(u, 'debit', 'win', amount, 'Withdraw request');
-  db.withdrawals.push({ id: Math.floor(1e4 + Math.random() * 9e4), uid: u.id, username: u.username, method, upi, amount, status: 'pending', at: Date.now() });
+  db.withdrawals.push({ id: Math.floor(1e4 + Math.random() * 9e4), uid: u.id, username: u.username, method, upi, amount, fee, payout: amount - fee, status: 'pending', at: Date.now() });
   await save();
   res.json({ ok: true, user: pub(u) });
 }));
@@ -251,13 +260,14 @@ app.post('/api/admin/login', wrap(async (req, res) => {
 }));
 app.get('/api/admin/stats', wrap(async (req, res) => {
   admin(req);
-  res.json({ users: Object.keys(db.users).length, matches: db.matches.length, pendingWithdraw: db.withdrawals.filter(w => w.status === 'pending').length, depositTotal: db.deposits.filter(d => d.status === 'approved').reduce((a, d) => a + d.amount, 0), withdrawTotal: db.withdrawals.filter(w => w.status === 'approved').reduce((a, d) => a + d.amount, 0) });
+  res.json({ banned: Object.values(db.users).filter(u => u.banned).length, liabilities: Object.values(db.users).reduce((a, u) => a + u.win + u.dep + u.bonus, 0), pendingDeposits: db.deposits.filter(d => d.status === 'pending').length, openTickets: db.tickets.filter(t => t.status === 'open').length, users: Object.keys(db.users).length, matches: db.matches.length, pendingWithdraw: db.withdrawals.filter(w => w.status === 'pending').length, depositTotal: db.deposits.filter(d => d.status === 'approved').reduce((a, d) => a + d.amount, 0), withdrawTotal: db.withdrawals.filter(w => w.status === 'approved').reduce((a, d) => a + d.amount, 0) });
 }));
 app.get('/api/admin/users', wrap(async (req, res) => { admin(req); res.json(Object.values(db.users).map(u => ({ ...pub(u), banned: !!u.banned, createdAt: u.createdAt }))); }));
 app.post('/api/admin/user/:id', wrap(async (req, res) => {
   admin(req);
   const u = db.users[req.params.id]; if (!u) fail('No user', 404);
   const { action, wallet = 'dep', amount = 0 } = req.body;
+  log('User ' + action + ' ' + u.username);
   if (action === 'ban') u.banned = true;
   else if (action === 'unban') u.banned = false;
   else if (action === 'add' && ['dep', 'win', 'bonus'].includes(wallet)) { u[wallet] += num(amount); tx(u, 'credit', wallet, num(amount), 'Admin credit'); }
@@ -320,6 +330,7 @@ app.get('/api/admin/withdrawals', wrap(async (req, res) => { admin(req); res.jso
 app.post('/api/admin/withdrawal/:id', wrap(async (req, res) => {
   admin(req);
   const w = db.withdrawals.find(x => String(x.id) === req.params.id); if (!w || w.status !== 'pending') fail('Not pending');
+  log('Withdraw ' + req.body.action + ' #' + w.id);
   if (req.body.action === 'approve') w.status = 'approved';
   else { w.status = 'rejected'; const u = db.users[w.uid]; if (u) { u.win += w.amount; tx(u, 'credit', 'win', w.amount, 'Withdraw refund'); } }
   await save(); res.json({ ok: true });
@@ -329,8 +340,10 @@ app.get('/api/admin/settings', wrap(async (req, res) => { admin(req); res.json(d
 app.post('/api/admin/settings', wrap(async (req, res) => {
   admin(req);
   const s = req.body || {};
-  ['appName', 'logo', 'announcement', 'about', 'faq', 'terms', 'privacy', 'contact'].forEach(k => { if (typeof s[k] === 'string') db.settings[k] = s[k]; });
-  ['signupBonus', 'referrerBonus', 'referralMinEntry', 'minDeposit', 'maxDeposit', 'minWithdraw'].forEach(k => { if (s[k] !== undefined) db.settings[k] = num(s[k]); });
+  ['appName', 'logo', 'announcement', 'maintenanceMsg', 'rules', 'telegram', 'whatsapp', 'about', 'faq', 'terms', 'privacy', 'contact'].forEach(k => { if (typeof s[k] === 'string') db.settings[k] = s[k]; });
+  ['dailyReward', 'withdrawFee', 'maxWithdrawPerDay', 'signupBonus', 'referrerBonus', 'referralMinEntry', 'minDeposit', 'maxDeposit', 'minWithdraw'].forEach(k => { if (s[k] !== undefined) db.settings[k] = num(s[k]); });
+  if (typeof s.maintenance === 'boolean') db.settings.maintenance = s.maintenance;
+  if (Array.isArray(s.banners)) db.settings.banners = s.banners.filter(b => b && b.img).slice(0, 10);
   if (Array.isArray(s.depositBonus)) db.settings.depositBonus = s.depositBonus.map(x => ({ dep: num(x.dep), bonus: num(x.bonus) }));
   await save(); res.json({ ok: true });
 }));
@@ -340,8 +353,119 @@ app.post('/api/admin/notice', wrap(async (req, res) => {
   await save(); res.json({ ok: true });
 }));
 
+// ====== EXTRA USER FEATURES ======
+app.post('/api/profile', wrap(async (req, res) => {
+  const u = user(req);
+  if (req.body.ign !== undefined) u.ign = String(req.body.ign).slice(0, 30);
+  if (req.body.avatar !== undefined) u.avatar = String(req.body.avatar).slice(0, 4);
+  await save(); res.json(pub(u));
+}));
+app.post('/api/password', wrap(async (req, res) => {
+  const u = user(req);
+  if (!bcrypt.compareSync(String(req.body.old || ''), u.hash)) fail('Old password wrong');
+  if (String(req.body.new || '').length < 6) fail('New password min 6 chars');
+  u.hash = bcrypt.hashSync(String(req.body.new), 8); await save(); res.json({ ok: true });
+}));
+app.post('/api/daily', wrap(async (req, res) => {
+  const u = user(req); const r = num(db.settings.dailyReward); const today = new Date().toDateString();
+  if (r <= 0) fail('Daily reward off hai');
+  if (u.lastDaily === today) fail('Aaj ka reward le liya, kal aana');
+  u.lastDaily = today; u.bonus += r; tx(u, 'credit', 'bonus', r, 'Daily reward'); await save();
+  res.json({ ok: true, reward: r, user: pub(u) });
+}));
+app.post('/api/promo', wrap(async (req, res) => {
+  const u = user(req); const code = String(req.body.code || '').trim().toUpperCase();
+  const p = db.promos.find(x => x.code === code && x.active !== false);
+  if (!p) fail('Invalid code');
+  if (p.expires && Date.now() > p.expires) fail('Code expired');
+  if (p.used.includes(u.id)) fail('Already used');
+  if (p.maxUses && p.used.length >= p.maxUses) fail('Code limit reached');
+  p.used.push(u.id); u.bonus += num(p.bonus); tx(u, 'credit', 'bonus', num(p.bonus), 'Promo ' + code); await save();
+  res.json({ ok: true, bonus: p.bonus, user: pub(u) });
+}));
+app.get('/api/match/:id', wrap(async (req, res) => {
+  const u = user(req); const m = db.matches.find(x => x.id === req.params.id); if (!m) fail('Not found', 404);
+  res.json({ ...matchView(m, u), players: db.joins.filter(j => j.matchId === m.id).map(j => j.ign) });
+}));
+app.get('/api/stats', wrap(async (req, res) => {
+  const u = user(req); const wins = db.txns.filter(t => t.uid === u.id && t.type === 'prize').length;
+  res.json({ ...pub(u), wins, winRate: u.matches ? Math.round(wins / u.matches * 100) : 0, ign: u.ign || '', avatar: u.avatar || '😎', dailyDone: u.lastDaily === new Date().toDateString(), referrals: Object.values(db.users).filter(x => x.referredBy === u.id).length });
+}));
+app.get('/api/top-players', wrap(async (req, res) => {
+  user(req); res.json(Object.values(db.users).sort((a, b) => b.earning - a.earning).slice(0, 20).map(u => ({ name: u.username, earning: u.earning, kills: u.kills, matches: u.matches, avatar: u.avatar || '😎' })));
+}));
+app.get('/api/tickets', wrap(async (req, res) => { const u = user(req); res.json(db.tickets.filter(t => t.uid === u.id).reverse()); }));
+app.post('/api/ticket', wrap(async (req, res) => {
+  const u = user(req); const t = db.tickets.find(x => x.id === req.body.id && x.uid === u.id);
+  const text = String(req.body.text || '').trim().slice(0, 500); if (!text) fail('Message likho');
+  if (t) { t.msgs.push({ from: 'user', text, at: Date.now() }); t.status = 'open'; }
+  else db.tickets.push({ id: uid(), uid: u.id, username: u.username, subject: String(req.body.subject || 'Support').slice(0, 60), msgs: [{ from: 'user', text, at: Date.now() }], status: 'open', at: Date.now() });
+  await save(); res.json({ ok: true });
+}));
+
+// ====== EXTRA ADMIN ======
+const log = m => { db.logs.unshift({ m, at: Date.now() }); db.logs = db.logs.slice(0, 300); };
+app.get('/api/admin/chart', wrap(async (req, res) => {
+  admin(req); const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 864e5); const k = d.toDateString();
+    days.push({ day: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+      dep: db.deposits.filter(x => x.status === 'approved' && new Date(x.at).toDateString() === k).reduce((a, x) => a + x.amount, 0),
+      wd: db.withdrawals.filter(x => x.status === 'approved' && new Date(x.at).toDateString() === k).reduce((a, x) => a + x.amount, 0),
+      users: Object.values(db.users).filter(x => new Date(x.createdAt).toDateString() === k).length });
+  }
+  res.json({ days, logs: db.logs.slice(0, 15) });
+}));
+app.get('/api/admin/user/:id/detail', wrap(async (req, res) => {
+  admin(req); const u = db.users[req.params.id]; if (!u) fail('No user', 404);
+  res.json({ ...pub(u), banned: !!u.banned, referredBy: db.users[u.referredBy]?.username || null, referrals: Object.values(db.users).filter(x => x.referredBy === u.id).map(x => x.username), txns: db.txns.filter(t => t.uid === u.id).slice(0, 30), deposits: db.deposits.filter(d => d.uid === u.id), withdrawals: db.withdrawals.filter(w => w.uid === u.id) });
+}));
+app.post('/api/admin/user/:id/password', wrap(async (req, res) => {
+  admin(req); const u = db.users[req.params.id]; if (!u) fail('No user', 404);
+  if (String(req.body.password || '').length < 6) fail('Min 6 chars');
+  u.hash = bcrypt.hashSync(String(req.body.password), 8); log('Password reset: ' + u.username); await save(); res.json({ ok: true });
+}));
+app.post('/api/admin/deposit/:id/recheck', wrap(async (req, res) => {
+  admin(req); const d = db.deposits.find(x => x.id === req.params.id); if (!d) fail('No deposit', 404);
+  await settleDeposit(d); res.json({ status: d.status });
+}));
+app.post('/api/admin/deposit/:id/approve', wrap(async (req, res) => {
+  admin(req); const d = db.deposits.find(x => x.id === req.params.id); if (!d || d.status === 'approved') fail('Cannot approve');
+  const u = db.users[d.uid]; u.dep += d.amount; tx(u, 'credit', 'dep', d.amount, 'Manual deposit ' + d.id);
+  const b = bonusFor(d.amount); if (b > 0) { u.bonus += b; tx(u, 'credit', 'bonus', b, 'Deposit bonus'); }
+  d.status = 'approved'; log('Manual approve deposit ' + d.id); await save(); res.json({ ok: true });
+}));
+app.get('/api/admin/promos', wrap(async (req, res) => { admin(req); res.json(db.promos); }));
+app.post('/api/admin/promo', wrap(async (req, res) => {
+  admin(req); const code = String(req.body.code || '').trim().toUpperCase(); if (!code) fail('Code required');
+  if (db.promos.some(p => p.code === code)) fail('Code exists');
+  db.promos.push({ code, bonus: num(req.body.bonus), maxUses: Math.floor(num(req.body.maxUses)), expires: req.body.expires ? new Date(req.body.expires).getTime() : 0, used: [], active: true });
+  log('Promo created ' + code); await save(); res.json({ ok: true });
+}));
+app.delete('/api/admin/promo/:code', wrap(async (req, res) => { admin(req); db.promos = db.promos.filter(p => p.code !== req.params.code); await save(); res.json({ ok: true }); }));
+app.get('/api/admin/tickets', wrap(async (req, res) => { admin(req); res.json(db.tickets.slice().reverse()); }));
+app.post('/api/admin/ticket/:id', wrap(async (req, res) => {
+  admin(req); const t = db.tickets.find(x => x.id === req.params.id); if (!t) fail('No ticket', 404);
+  if (req.body.text) t.msgs.push({ from: 'admin', text: String(req.body.text).slice(0, 500), at: Date.now() });
+  if (req.body.status) t.status = req.body.status;
+  await save(); res.json({ ok: true });
+}));
+app.get('/api/admin/notices', wrap(async (req, res) => { admin(req); res.json(db.notices); }));
+app.delete('/api/admin/notice/:id', wrap(async (req, res) => { admin(req); db.notices = db.notices.filter(n => n.id !== req.params.id); await save(); res.json({ ok: true }); }));
+app.delete('/api/admin/match/:id', wrap(async (req, res) => {
+  admin(req); const m = db.matches.find(x => x.id === req.params.id); if (!m) fail('No match', 404);
+  if (m.status !== 'resulted' && db.joins.some(j => j.matchId === m.id)) fail('Players joined hain, Cancel+Refund use karo');
+  db.matches = db.matches.filter(x => x.id !== m.id); db.joins = db.joins.filter(j => j.matchId !== m.id); await save(); res.json({ ok: true });
+}));
+app.post('/api/admin/broadcast-bonus', wrap(async (req, res) => {
+  admin(req); const a = num(req.body.amount); if (a <= 0) fail('Amount?');
+  Object.values(db.users).forEach(u => { u.bonus += a; tx(u, 'credit', 'bonus', a, req.body.note || 'Bonus from admin'); });
+  log('Broadcast bonus ' + a); await save(); res.json({ ok: true });
+}));
+
 app.get('/admin', (q, r) => r.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/', (q, r) => r.sendFile(path.join(__dirname, 'index.html')));
+app.get('/favicon.ico', (q, r) => r.status(204).end());
 app.get('/health', (q, r) => r.send('ok'));
 
 load().then(() => app.listen(PORT, () => console.log('Running on', PORT)));

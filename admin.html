@@ -1,47 +1,206 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin</title>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Panel</title>
 <style>
-*{box-sizing:border-box;font-family:system-ui,sans-serif}body{margin:0;background:#0b1730;color:#fff}
-.top{background:#06284d;padding:12px 16px;display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0}
-.top button{width:auto;padding:8px 14px;margin:0;background:#1e2a55}.top button.on{background:#4361ee}
-.w{padding:14px;max-width:1000px;margin:auto}.card{background:#1e2540;border-radius:12px;padding:14px;margin-bottom:12px;overflow:auto}
-input,select,textarea{padding:9px;border-radius:8px;border:1px solid #445;background:#fff;color:#111;margin:3px;font-size:14px;max-width:100%}
-button{background:#4361ee;color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;margin:2px}button.r{background:#ef4444}button.g{background:#22c55e}
-table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid #334;text-align:left}
-.st{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.st div{background:#1e2540;padding:16px;border-radius:12px}.st b{display:block;font-size:24px}
+:root{--bg:#0a1020;--s1:#111a30;--s2:#18243f;--s3:#20305a;--line:#ffffff14;--tx:#e8eeff;--mu:#8fa0c8;--ac:#6a5cff;--g:#2ee59d;--r:#ff4d6d;--gold:#ffc233;--b:#00b8ff}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);display:flex;min-height:100vh}
+aside{width:230px;background:#0c1428;border-right:1px solid var(--line);padding:16px 10px;position:sticky;top:0;height:100vh;overflow:auto;flex:none}
+aside h2{font-size:17px;padding:6px 10px 16px;display:flex;gap:8px;align-items:center}
+aside a{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;color:var(--mu);cursor:pointer;font-size:14px;margin-bottom:2px}
+aside a:hover{background:var(--s1)}aside a.on{background:var(--ac);color:#fff}
+aside a b{margin-left:auto;background:var(--r);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px}
+main{flex:1;min-width:0;padding:22px 24px 60px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}.top h1{font-size:22px;flex:1}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;overflow:auto}
+.card h3{font-size:15px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px}.kpi small{color:var(--mu);font-size:12px}.kpi b{display:block;font-size:26px;margin-top:4px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.row>*{flex:1;min-width:130px}.row.st{align-items:stretch}
+label{font-size:12px;color:var(--mu);display:block;margin:8px 0 3px}
+input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--s2);color:var(--tx);font-size:14px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+textarea{resize:vertical;min-height:70px}
+button{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:9px 14px;cursor:pointer;font-size:13px;font-weight:600}
+button:hover{filter:brightness(1.1)}button.g{background:#16c784;color:#032}button.r{background:var(--r)}button.o{background:var(--s3)}button.sm{padding:6px 10px;font-size:12px}button:disabled{opacity:.4}
+table{width:100%;border-collapse:collapse;font-size:13px}th{color:var(--mu);font-weight:600;text-align:left;font-size:12px;white-space:nowrap}td,th{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}tr:hover td{background:#ffffff05}
+.st{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.approved,.paid,.upcoming,.resolved{background:#2ee59d22;color:var(--g)}.pending,.open,.ongoing{background:#ffc23322;color:var(--gold)}.rejected,.failed,.closed,.banned{background:#ff4d6d22;color:var(--r)}.resulted{background:#00b8ff22;color:var(--b)}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}.tabs div{padding:8px 14px;border-radius:10px;background:var(--s1);border:1px solid var(--line);font-size:13px;cursor:pointer;color:var(--mu)}.tabs div.on{background:var(--ac);color:#fff;border-color:transparent}
+.modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}.modal .box{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:20px;width:100%;max-width:640px;max-height:90vh;overflow:auto}
+.toast{position:fixed;top:18px;right:18px;background:#0c1428;border:1px solid var(--line);padding:12px 18px;border-radius:12px;z-index:99;box-shadow:0 10px 30px #0008}
+.sw{display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 0}.sw i{width:44px;height:24px;border-radius:99px;background:var(--s3);position:relative;transition:.2s;flex:none}.sw i:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}.sw.on i{background:var(--g)}.sw.on i:after{left:23px}
+.msg{padding:9px 12px;border-radius:12px;margin-bottom:6px;max-width:80%;font-size:13px}.msg.user{background:var(--s3)}.msg.admin{background:var(--ac);margin-left:auto}
+.log{padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;display:flex;justify-content:space-between;gap:10px}.log small{color:var(--mu);white-space:nowrap}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mu);margin-bottom:6px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.ed{display:flex;gap:8px;margin-bottom:6px;align-items:center}.ed input{flex:1}
+.login{max-width:360px;margin:12vh auto;width:100%;padding:0 16px}
+.mt{display:none;position:fixed;top:0;left:0;right:0;background:#0c1428;padding:10px 12px;z-index:20;border-bottom:1px solid var(--line);align-items:center;gap:10px}
+@media(max-width:820px){body{display:block}aside{position:fixed;left:-250px;top:0;z-index:40;transition:.25s;width:230px}aside.open{left:0}.mt{display:flex}main{padding:70px 12px 60px}}
 </style></head><body>
-<div id="app"></div>
+<div id="app" style="width:100%"></div>
 <script>
-const $=s=>document.querySelector(s);let T=localStorage.getItem('atk'),tab='stats';
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-async function api(p,b,m){const r=await fetch('/api/admin'+p,{method:m||(b?'POST':'GET'),headers:{'Content-Type':'application/json',Authorization:'Bearer '+T},body:b?JSON.stringify(b):undefined});const j=await r.json().catch(()=>({}));if(!r.ok){if(r.status==401||r.status==403){T=null;localStorage.removeItem('atk');login()}throw new Error(j.error||'Error')}return j}
-function login(){$('#app').innerHTML=`<div class="w" style="max-width:340px"><h2>Admin Login</h2><input id="u" placeholder="Username"><br><input id="p" type="password" placeholder="Password"><br><button onclick="doLogin()">Login</button></div>`}
-async function doLogin(){try{const r=await api('/login',{username:$('#u').value,password:$('#p').value});T=r.token;localStorage.setItem('atk',T);show()}catch(e){alert(e.message)}}
-const TABS=['stats','matches','games','users','withdrawals','deposits','settings','notice'];
-function shell(h){$('#app').innerHTML=`<div class="top">${TABS.map(t=>`<button class="${tab==t?'on':''}" onclick="tab='${t}';show()">${t}</button>`).join('')}<button class="r" onclick="localStorage.removeItem('atk');location.reload()">logout</button></div><div class="w">${h}</div>`}
-async function show(){if(!T)return login();try{
-if(tab=='stats'){const s=await api('/stats');shell(`<div class="st"><div>Users<b>${s.users}</b></div><div>Matches<b>${s.matches}</b></div><div>Pending withdrawals<b>${s.pendingWithdraw}</b></div><div>Total deposits<b>₹${s.depositTotal}</b></div><div>Total paid out<b>₹${s.withdrawTotal}</b></div></div>`)}
-else if(tab=='games'){const g=await api('/games');shell(`<div class="card"><h3>Add game</h3><input id="gn" placeholder="Name"><input id="gi" placeholder="Image URL"><button onclick="addGame()">Add</button></div>${g.map(x=>`<div class="card">${esc(x.name)} <button class="r" onclick="delGame('${x.id}')">Delete</button></div>`).join('')}`)}
-else if(tab=='matches'){const [m,g]=await Promise.all([api('/matches'),api('/games')]);window.M=m;shell(`<div class="card"><h3>Create match</h3><select id="mg">${g.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select><input id="mt" placeholder="Title"><input id="mi" placeholder="Image URL"><input id="mtm" type="datetime-local"><input id="mp" type="number" placeholder="Prize pool"><input id="mk" type="number" placeholder="Per kill"><input id="mf" type="number" placeholder="Entry fee"><select id="my"><option>Solo</option><option>Duo</option><option>Squad</option></select><input id="mm" placeholder="Map"><input id="ms" type="number" placeholder="Slots" value="20"><button class="g" onclick="addMatch()">Create</button></div>${m.map(x=>`<div class="card"><b>${esc(x.title)}</b> • ${x.status} • ₹${x.fee} • ${x.players.length}/${x.slots} • ${new Date(x.time).toLocaleString()}<br>Room: <input id="r${x.id}" value="${esc(x.roomId)}" placeholder="Room ID" size=10><input id="p${x.id}" value="${esc(x.roomPass)}" placeholder="Pass" size=8><button onclick="saveRoom('${x.id}')">Save room</button><button onclick="setSt('${x.id}','ongoing')">Start</button><button class="r" onclick="cancelM('${x.id}')">Cancel+Refund</button>${x.status!='resulted'?`<button class="g" onclick="resultUI('${x.id}')">Enter result</button>`:''}<div id="res${x.id}"></div></div>`).join('')}`)}
-else if(tab=='users'){const u=await api('/users');shell(`<div class="card"><table><tr><th>User</th><th>Dep</th><th>Win</th><th>Bonus</th><th>Matches</th><th>Actions</th></tr>${u.map(x=>`<tr><td>${esc(x.username)}${x.banned?' 🚫':''}</td><td>${x.dep}</td><td>${x.win}</td><td>${x.bonus}</td><td>${x.matches}</td><td><button onclick="adj('${x.id}','add')">+</button><button onclick="adj('${x.id}','deduct')">-</button><button class="r" onclick="uact('${x.id}','${x.banned?'unban':'ban'}')">${x.banned?'unban':'ban'}</button></td></tr>`).join('')}</table></div>`)}
-else if(tab=='withdrawals'){const w=await api('/withdrawals');shell(`<div class="card"><table><tr><th>ID</th><th>User</th><th>UPI</th><th>Amt</th><th>Status</th><th></th></tr>${w.map(x=>`<tr><td>${x.id}</td><td>${esc(x.username)}</td><td>${esc(x.upi)} (${esc(x.method)})</td><td>₹${x.amount}</td><td>${x.status}</td><td>${x.status=='pending'?`<button class="g" onclick="wact('${x.id}','approve')">Paid</button><button class="r" onclick="wact('${x.id}','reject')">Reject</button>`:''}</td></tr>`).join('')}</table></div>`)}
-else if(tab=='deposits'){const d=await api('/deposits');shell(`<div class="card"><table><tr><th>ID</th><th>User</th><th>Amt</th><th>Status</th><th>Time</th></tr>${d.map(x=>`<tr><td>${x.id}</td><td>${esc(x.username)}</td><td>₹${x.amount}</td><td>${x.status}</td><td>${new Date(x.at).toLocaleString()}</td></tr>`).join('')}</table></div>`)}
-else if(tab=='settings'){const s=await api('/settings');window.SS=s;const f=['appName','logo','announcement','signupBonus','referrerBonus','referralMinEntry','minDeposit','maxDeposit','minWithdraw','about','faq','terms','privacy','contact'];shell(`<div class="card">${f.map(k=>`<div><label>${k}</label><br><textarea id="s_${k}" rows="${['about','faq','terms','privacy'].includes(k)?4:1}" style="width:100%">${esc(s[k])}</textarea></div>`).join('')}<label>depositBonus (JSON)</label><textarea id="s_db" rows="5" style="width:100%">${esc(JSON.stringify(s.depositBonus))}</textarea><button class="g" onclick="saveSet()">Save settings</button></div>`)}
-else if(tab=='notice'){shell(`<div class="card"><input id="nt" placeholder="Title"><br><textarea id="nb" placeholder="Message" style="width:100%"></textarea><button onclick="sendN()">Send notification</button></div>`)}
-}catch(e){console.log(e)}}
-async function addGame(){await api('/game',{name:$('#gn').value,image:$('#gi').value});show()}
-async function delGame(id){if(confirm('Delete?')){await api('/game/'+id,null,'DELETE');show()}}
-async function addMatch(){const v=i=>$('#'+i).value;await api('/match',{gameId:v('mg'),title:v('mt'),image:v('mi'),time:v('mtm'),prize:v('mp'),perKill:v('mk'),fee:v('mf'),type:v('my'),map:v('mm'),slots:v('ms')});show()}
-async function saveRoom(id){const m=M.find(x=>x.id==id);await api('/match',{...m,time:m.time,id,roomId:$('#r'+id).value,roomPass:$('#p'+id).value});alert('Saved');show()}
-async function setSt(id,s){await api(`/match/${id}/status`,{status:s});show()}
-async function cancelM(id){if(confirm('Cancel and refund all?')){await api(`/match/${id}/cancel`,{});show()}}
-function resultUI(id){const m=M.find(x=>x.id==id);$('#res'+id).innerHTML=`<table>${m.players.map(p=>`<tr><td>${esc(p.username)} (${esc(p.ign)})</td><td><input class="k${id}" data-u="${p.uid}" type="number" placeholder="kills" style="width:70px"></td><td><input class="pz${id}" data-u="${p.uid}" type="number" placeholder="prize" style="width:80px"></td></tr>`).join('')}</table><button class="g" onclick="subRes('${id}')">Submit result & pay</button>`}
-async function subRes(id){const ks=[...document.querySelectorAll('.k'+id)],ps=[...document.querySelectorAll('.pz'+id)];const results=ks.map((k,i)=>({uid:k.dataset.u,kills:k.value||0,prize:ps[i].value||0}));if(!confirm('Credit winnings?'))return;await api(`/match/${id}/result`,{results});show()}
-async function adj(id,a){const w=prompt('Wallet (dep/win/bonus)','dep');const am=prompt('Amount');if(w&&am){await api('/user/'+id,{action:a,wallet:w,amount:am});show()}}
-async function uact(id,a){await api('/user/'+id,{action:a});show()}
-async function wact(id,a){await api('/withdrawal/'+id,{action:a});show()}
-async function saveSet(){const o={};Object.keys(SS).forEach(k=>{const e=$('#s_'+k);if(e)o[k]=e.value});try{o.depositBonus=JSON.parse($('#s_db').value)}catch{return alert('Bad JSON')}await api('/settings',o);alert('Saved')}
-async function sendN(){await api('/notice',{title:$('#nt').value,body:$('#nb').value});alert('Sent')}
+const $=s=>document.querySelector(s);
+let T=null;try{T=localStorage.getItem('atk')}catch{}
+let page='dash',ST={},F={};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rs=n=>'₹'+(Math.round(n*100)/100).toLocaleString('en-IN');
+const fT=t=>t?new Date(t).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'-';
+const lt=t=>{const d=new Date(t-new Date().getTimezoneOffset()*6e4);return d.toISOString().slice(0,16)};
+async function api(p,b,m){
+  const r=await fetch('/api/admin'+p,{method:m||(b?'POST':'GET'),headers:{'Content-Type':'application/json',Authorization:'Bearer '+T},body:b?JSON.stringify(b):undefined});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){if(r.status==401||r.status==403){T=null;try{localStorage.removeItem('atk')}catch{}login()}throw new Error(j.error||'Error')}return j}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+function modal(h,w){closeM();const d=document.createElement('div');d.className='modal';d.innerHTML=`<div class="box" ${w?`style="max-width:${w}px"`:''}>${h}</div>`;d.addEventListener('mousedown',e=>{if(e.target==d)closeM()});document.body.appendChild(d)}
+function closeM(){document.querySelectorAll('.modal').forEach(x=>x.remove())}
+async function run(fn,ok){try{await fn();if(ok)toast(ok)}catch(e){toast(e.message)}}
+function csv(name,rows){const c=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download=name;a.click()}
+function copyT(t){try{navigator.clipboard.writeText(t);toast('Copied')}catch{toast(t)}}
+
+function login(){$('#app').innerHTML=`<div class="login"><div class="card"><h2 style="margin-bottom:6px">🛡️ Admin Login</h2><p style="color:var(--mu);font-size:13px;margin-bottom:10px">Sirf owner ke liye</p><label>Username</label><input id="u"><label>Password</label><input id="p" type="password" onkeydown="if(event.key=='Enter')doLogin()"><button style="width:100%;margin-top:14px;padding:12px" onclick="doLogin()">Login</button></div></div>`}
+async function doLogin(){try{const r=await api('/login',{username:$('#u').value,password:$('#p').value});T=r.token;try{localStorage.setItem('atk',T)}catch{}show()}catch(e){toast(e.message)}}
+
+const NAV=[['dash','📊','Dashboard'],['matches','🎮','Matches'],['games','🕹️','Games'],['users','👥','Users'],['wd','💸','Withdrawals','pendingWithdraw'],['dep','💰','Deposits','pendingDeposits'],['promo','🎟️','Promo Codes'],['tickets','🎧','Support','openTickets'],['notice','🔔','Notifications'],['settings','⚙️','Settings'],['logs','📜','Activity Log']];
+function shell(title,body,actions){
+  $('#app').innerHTML=`<div class="mt"><button class="o" onclick="document.querySelector('aside').classList.toggle('open')">☰</button><b>${esc(title)}</b></div>
+  <div style="display:flex"><aside><h2>🛡️ Admin</h2>${NAV.map(n=>`<a class="${page==n[0]?'on':''}" onclick="page='${n[0]}';F={};show()">${n[1]} ${n[2]}${n[3]&&ST[n[3]]?`<b>${ST[n[3]]}</b>`:''}</a>`).join('')}<a onclick="window.open('/','_blank')">🔗 Open app</a><a onclick="try{localStorage.removeItem('atk')}catch{};location.reload()" style="color:var(--r)">⏻ Logout</a></aside>
+  <main><div class="top"><h1>${esc(title)}</h1>${actions||''}</div>${body}</main></div>`}
+
+async function show(){
+  if(!T)return login();
+  try{ST=await api('/stats')}catch{return}
+  try{await P[page]()}catch(e){toast(e.message)}}
+
+const P={
+async dash(){
+  const [c]=await Promise.all([api('/chart')]);const s=ST;
+  const mx=Math.max(1,...c.days.flatMap(d=>[d.dep,d.wd]));const W=560,H=190,bw=18,gap=(W-40)/7;
+  const bars=c.days.map((d,i)=>{const x=30+i*gap,h1=d.dep/mx*140,h2=d.wd/mx*140;return `<rect x="${x}" y="${160-h1}" width="${bw}" height="${h1}" rx="4" fill="#2ee59d"><title>Deposit ${d.dep}</title></rect><rect x="${x+bw+3}" y="${160-h2}" width="${bw}" height="${h2}" rx="4" fill="#ff4d6d"><title>Withdraw ${d.wd}</title></rect><text x="${x+bw}" y="180" fill="#8fa0c8" font-size="11" text-anchor="middle">${d.day}</text><text x="${x+bw}" y="${150-Math.max(h1,h2)}" fill="#8fa0c8" font-size="10" text-anchor="middle">${d.users?'+'+d.users+'👤':''}</text>`}).join('');
+  const profit=s.depositTotal-s.withdrawTotal;
+  shell('Dashboard',`<div class="grid">
+  <div class="kpi"><small>Total users</small><b>${s.users}</b></div><div class="kpi"><small>Banned</small><b>${s.banned}</b></div><div class="kpi"><small>Matches</small><b>${s.matches}</b></div>
+  <div class="kpi"><small>Total deposits</small><b style="color:var(--g)">${rs(s.depositTotal)}</b></div><div class="kpi"><small>Paid out</small><b style="color:var(--r)">${rs(s.withdrawTotal)}</b></div><div class="kpi"><small>Net (dep − payout)</small><b>${rs(profit)}</b></div>
+  <div class="kpi"><small>Pending withdrawals</small><b style="color:var(--gold)">${s.pendingWithdraw}</b></div><div class="kpi"><small>Open tickets</small><b>${s.openTickets}</b></div><div class="kpi"><small>User wallets total (liability)</small><b>${rs(s.liabilities)}</b></div></div>
+  <div class="card"><h3>Last 7 days</h3><div class="legend"><span><i style="background:#2ee59d"></i>Deposits</span><span><i style="background:#ff4d6d"></i>Withdrawals</span><span>👤 new users</span></div>${c.days.every(d=>!d.dep&&!d.wd)?'<p style="color:var(--mu);font-size:13px;margin:6px 0">Abhi koi deposit / withdrawal nahi hua — data aate hi bars dikhenge.</p>':''}<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:760px"><line x1="20" y1="160" x2="${W}" y2="160" stroke="#ffffff22"/>${bars}</svg></div>
+  <div class="row st"><div class="card"><h3>Quick actions</h3><div class="sw ${(await api('/settings')).maintenance?'on':''}" id="mnt" onclick="toggleMaint()"><i></i><span>Maintenance mode</span></div><button class="o" onclick="bonusAll()">🎁 Give bonus to all users</button> <button class="o" onclick="page='notice';show()">🔔 Send notification</button></div>
+  <div class="card" style="flex:2"><h3>Recent activity</h3>${c.logs.map(l=>`<div class="log"><span>${esc(l.m)}</span><small>${fT(l.at)}</small></div>`).join('')||'<p style="color:var(--mu)">Nothing yet</p>'}</div></div>`)},
+
+async matches(){
+  const [m,g]=await Promise.all([api('/matches'),api('/games')]);window._m=m;window._g=g;
+  const f=F.s||'all';const L=m.filter(x=>f=='all'||x.status==f);
+  shell('Matches',`<div class="tabs">${['all','upcoming','ongoing','resulted'].map(x=>`<div class="${f==x?'on':''}" onclick="F.s='${x}';show()">${x} (${x=='all'?m.length:m.filter(y=>y.status==x).length})</div>`).join('')}</div>
+  <div class="card"><table><tr><th>Match</th><th>Game</th><th>Time</th><th>Fee</th><th>Prize</th><th>Players</th><th>Status</th><th>Room</th><th></th></tr>${L.map(x=>`<tr><td><b>${esc(x.title)}</b><br><small style="color:var(--mu)">#${x.id.slice(0,6)} • ${esc(x.type)} • ${esc(x.map)}</small></td><td>${esc((g.find(y=>y.id==x.gameId)||{}).name||'-')}</td><td>${fT(x.time)}</td><td>${rs(x.fee)}</td><td>${rs(x.prize)}${x.perKill?`<br><small>+${x.perKill}/kill</small>`:''}</td><td>${x.players.length}/${x.slots}</td><td><span class="st ${x.status}">${x.status}</span></td><td>${x.roomId?esc(x.roomId)+' / '+esc(x.roomPass):'-'}</td>
+  <td style="white-space:nowrap"><button class="sm o" onclick="matchForm('${x.id}')">Edit</button> ${x.status=='upcoming'?`<button class="sm o" onclick="setSt('${x.id}','ongoing')">Start</button> `:''}${x.status!='resulted'?`<button class="sm g" onclick="resultUI('${x.id}')">Result</button> <button class="sm r" onclick="cancelM('${x.id}')">Cancel</button>`:''} <button class="sm o" onclick="players('${x.id}')">👥</button> <button class="sm o" onclick="matchForm('${x.id}',1)" title="Duplicate">⧉</button></td></tr>`).join('')||'<tr><td colspan="9" style="color:var(--mu)">No matches</td></tr>'}</table></div>`,
+  `<button class="g" onclick="matchForm()">＋ Create match</button>`)},
+
+async games(){
+  const g=await api('/games');window._g=g;
+  shell('Games',`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">${g.map(x=>`<div class="card" style="padding:0"><div style="height:110px;background:${x.image?`url('${esc(x.image)}') center/cover`:'linear-gradient(135deg,#ff8a3d,#6a5cff)'};border-radius:16px 16px 0 0"></div><div style="padding:12px"><b>${esc(x.name)}</b><div style="margin-top:10px;display:flex;gap:6px"><button class="sm o" onclick="gameForm('${x.id}')">Edit</button><button class="sm r" onclick="delGame('${x.id}')">Delete</button></div></div></div>`).join('')}</div>`,
+  `<button class="g" onclick="gameForm()">＋ Add game</button>`)},
+
+async users(){
+  const u=await api('/users');window._u=u;const q=(F.q||'').toLowerCase();
+  const L=u.filter(x=>x.username.includes(q)).sort((a,b)=>b.createdAt-a.createdAt);
+  shell('Users ('+u.length+')',`<div class="card"><input placeholder="🔍 Search username…" value="${esc(F.q||'')}" oninput="F.q=this.value;clearTimeout(window._t);window._t=setTimeout(()=>{show().then(()=>{const i=document.querySelector('main input');i.focus();i.setSelectionRange(99,99)})},350)"></div>
+  <div class="card"><table><tr><th>User</th><th>Deposit</th><th>Win</th><th>Bonus</th><th>Matches</th><th>Kills</th><th>Joined</th><th></th></tr>${L.slice(0,200).map(x=>`<tr><td><b>${esc(x.username)}</b> ${x.banned?'<span class="st banned">banned</span>':''}</td><td>${x.dep}</td><td>${x.win}</td><td>${x.bonus}</td><td>${x.matches}</td><td>${x.kills}</td><td>${fT(x.createdAt)}</td><td style="white-space:nowrap"><button class="sm o" onclick="userDetail('${x.id}')">View</button> <button class="sm o" onclick="adj('${x.id}')">± Balance</button> <button class="sm ${x.banned?'g':'r'}" onclick="uact('${x.id}','${x.banned?'unban':'ban'}')">${x.banned?'Unban':'Ban'}</button></td></tr>`).join('')}</table></div>`,
+  `<button class="o" onclick="csv('users.csv',[['username','deposit','win','bonus','matches','kills']].concat(_u.map(x=>[x.username,x.dep,x.win,x.bonus,x.matches,x.kills])))">⬇ Export CSV</button>`)},
+
+async wd(){
+  const w=await api('/withdrawals');window._w=w;const f=F.s||'pending';const L=w.filter(x=>f=='all'||x.status==f);
+  shell('Withdrawals',`<div class="tabs">${['pending','approved','rejected','all'].map(x=>`<div class="${f==x?'on':''}" onclick="F.s='${x}';show()">${x} (${x=='all'?w.length:w.filter(y=>y.status==x).length})</div>`).join('')}</div>
+  <div class="card"><table><tr><th>ID</th><th>User</th><th>UPI</th><th>Amount</th><th>Fee</th><th>Pay</th><th>Time</th><th>Status</th><th></th></tr>${L.map(x=>`<tr><td>#${x.id}</td><td>${esc(x.username)}</td><td>${esc(x.upi)} <small style="color:var(--mu)">(${esc(x.method)})</small> <button class="sm o" onclick="copyT('${esc(x.upi)}')">⧉</button></td><td>${rs(x.amount)}</td><td>${rs(x.fee||0)}</td><td><b>${rs(x.payout??x.amount)}</b></td><td>${fT(x.at)}</td><td><span class="st ${x.status}">${x.status}</span></td><td>${x.status=='pending'?`<button class="sm g" onclick="wact('${x.id}','approve')">Mark paid</button> <button class="sm r" onclick="wact('${x.id}','reject')">Reject</button>`:''}</td></tr>`).join('')||'<tr><td colspan="9" style="color:var(--mu)">Nothing here</td></tr>'}</table></div>`,
+  `<button class="o" onclick="csv('withdrawals.csv',[['id','user','upi','amount','fee','status']].concat(_w.map(x=>[x.id,x.username,x.upi,x.amount,x.fee||0,x.status])))">⬇ Export CSV</button>`)},
+
+async dep(){
+  const d=await api('/deposits');const f=F.s||'all';const L=d.filter(x=>f=='all'||x.status==f);
+  shell('Deposits',`<div class="tabs">${['all','pending','approved','failed'].map(x=>`<div class="${f==x?'on':''}" onclick="F.s='${x}';show()">${x}</div>`).join('')}</div>
+  <div class="card"><table><tr><th>Order</th><th>User</th><th>Amount</th><th>Time</th><th>Status</th><th></th></tr>${L.map(x=>`<tr><td>${x.id}</td><td>${esc(x.username)}</td><td>${rs(x.amount)}</td><td>${fT(x.at)}</td><td><span class="st ${x.status}">${x.status}</span></td><td>${x.status!='approved'?`<button class="sm o" onclick="recheck('${x.id}')">Re-check gateway</button> <button class="sm g" onclick="manualDep('${x.id}')">Approve manually</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mu)">Nothing here</td></tr>'}</table></div>`)},
+
+async promo(){
+  const p=await api('/promos');
+  shell('Promo Codes',`<div class="card"><h3>Create code</h3><div class="row"><div><label>Code</label><input id="pc" placeholder="WELCOME10" style="text-transform:uppercase"></div><div><label>Bonus coins</label><input id="pb" type="number"></div><div><label>Max uses (0 = unlimited)</label><input id="pm" type="number" value="0"></div><div><label>Expires</label><input id="pe" type="datetime-local"></div><button class="g" onclick="addPromo()">Create</button></div></div>
+  <div class="card"><table><tr><th>Code</th><th>Bonus</th><th>Used</th><th>Expires</th><th></th></tr>${p.map(x=>`<tr><td><b>${esc(x.code)}</b></td><td>${x.bonus}</td><td>${x.used.length}${x.maxUses?' / '+x.maxUses:''}</td><td>${x.expires?fT(x.expires):'Never'}</td><td><button class="sm r" onclick="delPromo('${esc(x.code)}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--mu)">No codes</td></tr>'}</table></div>`)},
+
+async tickets(){
+  const t=await api('/tickets');window._t=t;const f=F.s||'open';const L=t.filter(x=>f=='all'||x.status==f);
+  shell('Support Tickets',`<div class="tabs">${['open','closed','all'].map(x=>`<div class="${f==x?'on':''}" onclick="F.s='${x}';show()">${x}</div>`).join('')}</div>
+  <div class="card"><table><tr><th>User</th><th>Subject</th><th>Last message</th><th>Time</th><th>Status</th><th></th></tr>${L.map(x=>`<tr><td>${esc(x.username)}</td><td><b>${esc(x.subject)}</b></td><td style="max-width:260px;color:var(--mu)">${esc(x.msgs[x.msgs.length-1].text.slice(0,70))}</td><td>${fT(x.at)}</td><td><span class="st ${x.status}">${x.status}</span></td><td><button class="sm" onclick="ticketUI('${x.id}')">Open</button></td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mu)">No tickets</td></tr>'}</table></div>`)},
+
+async notice(){
+  const n=await api('/notices');
+  shell('Notifications',`<div class="card"><h3>Send to all users</h3><label>Title</label><input id="nt"><label>Message</label><textarea id="nb"></textarea><button class="g" style="margin-top:10px" onclick="sendN()">Send</button></div>
+  <div class="card"><h3>Sent</h3>${n.map(x=>`<div class="log"><span><b>${esc(x.title)}</b><br><small>${esc(x.body)}</small></span><span style="text-align:right"><small>${fT(x.at)}</small><br><button class="sm r" onclick="delN('${x.id}')">Delete</button></span></div>`).join('')||'<p style="color:var(--mu)">None</p>'}</div>`)},
+
+async settings(){
+  const s=await api('/settings');window.SS=s;
+  const tx=(k,l,t='text')=>`<div><label>${l}</label><input id="s_${k}" type="${t}" value="${esc(s[k])}"></div>`;
+  const ta=(k,l,r=4)=>`<label>${l}</label><textarea id="s_${k}" rows="${r}">${esc(s[k])}</textarea>`;
+  shell('Settings',`<div class="card"><h3>General</h3><div class="row">${tx('appName','App name')}${tx('logo','Logo URL')}</div><div class="row">${tx('telegram','Telegram link')}${tx('whatsapp','WhatsApp link')}${tx('contact','Contact / support')}</div>${ta('announcement','Announcement (scrolling text)',2)}
+  <div class="sw ${s.maintenance?'on':''}" id="s_mnt" onclick="this.classList.toggle('on')"><i></i><span>Maintenance mode (users blocked)</span></div>${ta('maintenanceMsg','Maintenance message',2)}</div>
+  <div class="card"><h3>Money rules</h3><div class="row">${tx('minDeposit','Min deposit','number')}${tx('maxDeposit','Max deposit','number')}${tx('minWithdraw','Min withdraw','number')}${tx('withdrawFee','Withdraw fee %','number')}${tx('maxWithdrawPerDay','Withdrawals / day','number')}</div></div>
+  <div class="card"><h3>Bonuses & referral</h3><div class="row">${tx('signupBonus','Friend register bonus','number')}${tx('referrerBonus','Referrer bonus','number')}${tx('referralMinEntry','Min entry fee for referral','number')}${tx('dailyReward','Daily reward','number')}</div></div>
+  <div class="card"><h3>Deposit bonus tiers</h3><div id="tiers">${s.depositBonus.map(t=>`<div class="ed"><input type="number" placeholder="Deposit ≥" value="${t.dep}"><input type="number" placeholder="Bonus" value="${t.bonus}"><button class="sm r" onclick="this.parentNode.remove()">✕</button></div>`).join('')}</div><button class="o sm" onclick="addRow('tiers','<input type=number placeholder=&quot;Deposit ≥&quot;><input type=number placeholder=Bonus>')">＋ Add tier</button></div>
+  <div class="card"><h3>Home banners (image URL + optional link)</h3><div id="bans">${s.banners.map(t=>`<div class="ed"><input placeholder="Image URL" value="${esc(t.img)}"><input placeholder="Link (optional)" value="${esc(t.link||'')}"><button class="sm r" onclick="this.parentNode.remove()">✕</button></div>`).join('')}</div><button class="o sm" onclick="addRow('bans','<input placeholder=&quot;Image URL&quot;><input placeholder=&quot;Link (optional)&quot;>')">＋ Add banner</button></div>
+  <div class="card"><h3>Content pages</h3>${ta('rules','Match rules')}${ta('about','About us')}${ta('faq','FAQ')}${ta('terms','Terms & conditions')}${ta('privacy','Privacy policy')}</div>
+  <button class="g" style="padding:12px 28px" onclick="saveSet()">💾 Save all settings</button>`)},
+
+async logs(){const c=await api('/chart');shell('Activity Log',`<div class="card">${c.logs.map(l=>`<div class="log"><span>${esc(l.m)}</span><small>${fT(l.at)}</small></div>`).join('')||'<p style="color:var(--mu)">No activity yet</p>'}</div>`)}
+};
+
+/* ---- actions ---- */
+function addRow(id,h){const d=document.createElement('div');d.className='ed';d.innerHTML=h.replace(/&quot;/g,'"')+'<button class="sm r" onclick="this.parentNode.remove()">✕</button>';document.getElementById(id).appendChild(d)}
+async function saveSet(){
+  const o={};['appName','logo','telegram','whatsapp','contact','announcement','maintenanceMsg','rules','about','faq','terms','privacy','minDeposit','maxDeposit','minWithdraw','withdrawFee','maxWithdrawPerDay','signupBonus','referrerBonus','referralMinEntry','dailyReward'].forEach(k=>{o[k]=$('#s_'+k).value});
+  o.maintenance=$('#s_mnt').classList.contains('on');
+  o.depositBonus=[...document.querySelectorAll('#tiers .ed')].map(r=>{const i=r.querySelectorAll('input');return{dep:+i[0].value,bonus:+i[1].value}}).filter(x=>x.dep>0);
+  o.banners=[...document.querySelectorAll('#bans .ed')].map(r=>{const i=r.querySelectorAll('input');return{img:i[0].value.trim(),link:i[1].value.trim()}}).filter(x=>x.img);
+  run(()=>api('/settings',o),'Settings saved ✓')}
+async function toggleMaint(){const s=await api('/settings');await run(()=>api('/settings',{maintenance:!s.maintenance}),!s.maintenance?'Maintenance ON':'Maintenance OFF');show()}
+function bonusAll(){modal(`<h3>Give bonus to ALL users</h3><label>Amount per user</label><input id="ba" type="number"><label>Note</label><input id="bn" value="Bonus from admin"><div style="margin-top:14px;display:flex;gap:8px"><button class="g" onclick="doBonusAll()">Send</button><button class="o" onclick="closeM()">Cancel</button></div>`,420)}
+async function doBonusAll(){run(async()=>{await api('/broadcast-bonus',{amount:$('#ba').value,note:$('#bn').value});closeM();show()},'Bonus sent ✓')}
+
+function matchForm(id,dup){
+  const m=id?_m.find(x=>x.id==id):{};const e=id&&!dup;
+  modal(`<h3>${e?'Edit':dup?'Duplicate':'Create'} match</h3><div class="row"><div><label>Game</label><select id="mg">${_g.map(x=>`<option value="${x.id}" ${m.gameId==x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div><div><label>Type</label><select id="my">${['Solo','Duo','Squad'].map(x=>`<option ${m.type==x?'selected':''}>${x}</option>`).join('')}</select></div></div>
+  <label>Title</label><input id="mt" value="${esc(m.title||'')}"><label>Image URL</label><input id="mi" value="${esc(m.image||'')}">
+  <div class="row"><div><label>Start time</label><input id="mtm" type="datetime-local" value="${lt(m.time||Date.now()+36e5)}"></div><div><label>Map</label><input id="mm" value="${esc(m.map||'')}"></div><div><label>Slots</label><input id="ms" type="number" value="${m.slots||20}"></div></div>
+  <div class="row"><div><label>Entry fee</label><input id="mf" type="number" value="${m.fee??''}"></div><div><label>Prize pool</label><input id="mp" type="number" value="${m.prize??''}"></div><div><label>Per kill</label><input id="mk" type="number" value="${m.perKill??0}"></div></div>
+  <div class="row"><div><label>Room ID</label><input id="mr" value="${esc(m.roomId||'')}"></div><div><label>Room password</label><input id="mpw" value="${esc(m.roomPass||'')}"></div></div>
+  <div style="margin-top:16px;display:flex;gap:8px"><button class="g" onclick="saveMatch(${e?`'${id}'`:'null'})">Save</button><button class="o" onclick="closeM()">Cancel</button></div>`)}
+async function saveMatch(id){const v=i=>$('#'+i).value;run(async()=>{await api('/match',{id,gameId:v('mg'),title:v('mt'),image:v('mi'),time:v('mtm'),prize:v('mp'),perKill:v('mk'),fee:v('mf'),type:v('my'),map:v('mm'),slots:v('ms'),roomId:v('mr'),roomPass:v('mpw')});closeM();show()},'Match saved ✓')}
+async function setSt(id,s){run(async()=>{await api(`/match/${id}/status`,{status:s});show()})}
+function cancelM(id){if(confirm('Cancel match aur sabko refund?'))run(async()=>{await api(`/match/${id}/cancel`,{});show()},'Cancelled & refunded')}
+function players(id){const m=_m.find(x=>x.id==id);modal(`<h3>Players (${m.players.length}/${m.slots})</h3><table><tr><th>#</th><th>User</th><th>In-game name</th></tr>${m.players.map((p,i)=>`<tr><td>${i+1}</td><td>${esc(p.username)}</td><td>${esc(p.ign)}</td></tr>`).join('')||'<tr><td colspan=3>No players</td></tr>'}</table><div style="margin-top:12px;display:flex;gap:8px"><button class="o" onclick="copyT(_m.find(x=>x.id=='${id}').players.map(p=>p.ign).join('\\n'))">Copy IGNs</button><button class="o" onclick="closeM()">Close</button></div>`,500)}
+function resultUI(id){const m=_m.find(x=>x.id==id);
+  modal(`<h3>Result — ${esc(m.title)}</h3><p style="color:var(--mu);font-size:13px;margin:4px 0 12px">Per kill ₹${m.perKill} auto add hoga. Prize = rank prize (0 if none).</p><table><tr><th>Player</th><th>IGN</th><th>Kills</th><th>Rank prize ₹</th></tr>${m.players.map(p=>`<tr><td>${esc(p.username)}</td><td>${esc(p.ign)}</td><td><input class="rk" data-u="${p.uid}" type="number" value="0" style="width:80px"></td><td><input class="rp" type="number" value="0" style="width:100px"></td></tr>`).join('')||'<tr><td colspan=4>No players</td></tr>'}</table><div style="margin-top:14px;display:flex;gap:8px"><button class="g" onclick="subRes('${id}')">Submit & credit winnings</button><button class="o" onclick="closeM()">Cancel</button></div>`,700)}
+function subRes(id){const k=[...document.querySelectorAll('.rk')],p=[...document.querySelectorAll('.rp')];const results=k.map((x,i)=>({uid:x.dataset.u,kills:x.value||0,prize:p[i].value||0}));if(!confirm('Winnings credit kar du? Ye undo nahi hoga.'))return;run(async()=>{await api(`/match/${id}/result`,{results});closeM();show()},'Result published ✓')}
+
+function gameForm(id){const g=id?_g.find(x=>x.id==id):{};modal(`<h3>${id?'Edit':'Add'} game</h3><label>Name</label><input id="gn" value="${esc(g.name||'')}"><label>Image URL</label><input id="gi" value="${esc(g.image||'')}"><div style="margin-top:14px;display:flex;gap:8px"><button class="g" onclick="saveGame(${id?`'${id}'`:'null'})">Save</button><button class="o" onclick="closeM()">Cancel</button></div>`,420)}
+function saveGame(id){run(async()=>{await api('/game',{id,name:$('#gn').value,image:$('#gi').value});closeM();show()},'Saved ✓')}
+function delGame(id){if(confirm('Delete game?'))run(async()=>{await api('/game/'+id,null,'DELETE');show()})}
+
+async function userDetail(id){
+  const d=await api(`/user/${id}/detail`);
+  modal(`<h3>${esc(d.username)} ${d.banned?'<span class="st banned">banned</span>':''}</h3><div class="grid" style="margin-top:12px"><div class="kpi"><small>Deposit</small><b>${d.dep}</b></div><div class="kpi"><small>Winning</small><b>${d.win}</b></div><div class="kpi"><small>Bonus</small><b>${d.bonus}</b></div><div class="kpi"><small>Matches / Kills</small><b>${d.matches} / ${d.kills}</b></div><div class="kpi"><small>Earning</small><b>${d.earning}</b></div></div>
+  <p style="font-size:13px;color:var(--mu)">Referred by: <b style="color:var(--tx)">${esc(d.referredBy||'-')}</b> • Referrals (${d.referrals.length}): ${d.referrals.map(esc).join(', ')||'-'}</p>
+  <div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap"><button class="o" onclick="adj('${id}')">± Balance</button><button class="o" onclick="resetPw('${id}')">Reset password</button><button class="${d.banned?'g':'r'}" onclick="uact('${id}','${d.banned?'unban':'ban'}');closeM()">${d.banned?'Unban':'Ban'}</button></div>
+  <h3 style="margin-top:14px">Recent transactions</h3><table>${d.txns.map(t=>`<tr><td>${fT(t.at)}</td><td>${esc(t.note)}</td><td style="color:${t.type=='debit'?'var(--r)':'var(--g)'}">${t.type=='debit'?'−':'+'}${t.amt}</td><td>${t.wallet}</td></tr>`).join('')||'<tr><td>None</td></tr>'}</table>
+  <button class="o" style="margin-top:14px" onclick="closeM()">Close</button>`,760)}
+function adj(id){modal(`<h3>Adjust balance</h3><label>Wallet</label><select id="aw"><option value="dep">Deposit</option><option value="win">Winning</option><option value="bonus">Bonus</option></select><label>Action</label><select id="aa"><option value="add">Add (credit)</option><option value="deduct">Deduct (debit)</option></select><label>Amount</label><input id="am" type="number"><div style="margin-top:14px;display:flex;gap:8px"><button class="g" onclick="doAdj('${id}')">Apply</button><button class="o" onclick="closeM()">Cancel</button></div>`,400)}
+function doAdj(id){run(async()=>{await api('/user/'+id,{action:$('#aa').value,wallet:$('#aw').value,amount:$('#am').value});closeM();show()},'Balance updated ✓')}
+function uact(id,a){run(async()=>{await api('/user/'+id,{action:a});show()},a+' done')}
+function resetPw(id){const p=prompt('New password (min 6 chars)');if(p)run(()=>api(`/user/${id}/password`,{password:p}),'Password reset ✓')}
+function wact(id,a){if(confirm(a=='approve'?'UPI pe payment kar diya? Mark paid?':'Reject karke paisa wapas karu?'))run(async()=>{await api('/withdrawal/'+id,{action:a});show()},'Done ✓')}
+function recheck(id){run(async()=>{const r=await api(`/deposit/${id}/recheck`,{});toast('Gateway status: '+r.status);show()})}
+function manualDep(id){if(confirm('Payment gateway me confirm kar liya? Manually approve?'))run(async()=>{await api(`/deposit/${id}/approve`,{});show()},'Approved ✓')}
+function addPromo(){run(async()=>{await api('/promo',{code:$('#pc').value,bonus:$('#pb').value,maxUses:$('#pm').value,expires:$('#pe').value});show()},'Code created ✓')}
+function delPromo(c){if(confirm('Delete '+c+'?'))run(async()=>{await api('/promo/'+encodeURIComponent(c),null,'DELETE');show()})}
+function ticketUI(id){const t=_t.find(x=>x.id==id);modal(`<h3>${esc(t.subject)} <small style="color:var(--mu)">— ${esc(t.username)}</small></h3><div style="margin:14px 0;max-height:46vh;overflow:auto">${t.msgs.map(m=>`<div class="msg ${m.from}">${esc(m.text)}<br><small style="opacity:.6">${fT(m.at)}</small></div>`).join('')}</div><input id="tr" placeholder="Reply…"><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="g" onclick="tReply('${id}')">Send reply</button><button class="o" onclick="tClose('${id}','${t.status=='open'?'closed':'open'}')">${t.status=='open'?'Close ticket':'Reopen'}</button><button class="o" onclick="closeM()">Back</button></div>`,560)}
+function tReply(id){run(async()=>{await api('/ticket/'+id,{text:$('#tr').value});closeM();show()},'Sent ✓')}
+function tClose(id,s){run(async()=>{await api('/ticket/'+id,{status:s});closeM();show()})}
+function sendN(){run(async()=>{await api('/notice',{title:$('#nt').value,body:$('#nb').value});show()},'Sent ✓')}
+function delN(id){run(async()=>{await api('/notice/'+id,null,'DELETE');show()})}
 show();
 </script></body></html>
