@@ -10,15 +10,29 @@ const { Redis } = require('@upstash/redis');
 // JWT_SECRET, ADMIN_USER, ADMIN_PASS
 // ZAPUPI_TOKEN, ZAPUPI_SECRET, BASE_URL (e.g. https://yourapp.onrender.com)
 // ZAPUPI_API (optional, default below) - Zapupi docs se verify karo
+const crypto = require('crypto');
+const IS_PROD = !!process.env.RENDER || process.env.NODE_ENV === 'production';
 const {
-  JWT_SECRET = 'change-me', ADMIN_USER = 'admin', ADMIN_PASS = 'admin123',
-  ZAPUPI_TOKEN, ZAPUPI_SECRET, BASE_URL = '',
-  ZAPUPI_API = 'https://api.zapupi.com/api', PORT = 3000
+  ADMIN_USER = 'admin', ADMIN_PASS = '', ZAPUPI_TOKEN, ZAPUPI_SECRET, BASE_URL = '',
+  ZAPUPI_API = 'https://api.zapupi.com/api', PORT = 3000, ALLOW_MEMORY_DB, ALLOW_REDIS_IMAGES,
+  CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
 } = process.env;
+let JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === 'change-me') {
+  JWT_SECRET = crypto.randomBytes(32).toString('hex');
+  console.warn('!!! JWT_SECRET not set: using a random one (everyone is logged out on each restart). Set it in Render. !!!');
+}
+const ADMIN_ENABLED = ADMIN_PASS.length >= 8 && ADMIN_PASS !== 'admin123';
+if (!ADMIN_ENABLED) console.warn('!!! ADMIN_PASS missing/weak (min 8 chars, not admin123): admin login is DISABLED !!!');
 
 const redis = process.env.UPSTASH_REDIS_REST_URL
   ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
-  : (() => { console.warn('!!! UPSTASH env missing: in-memory store (data restart par ud jayega) !!!'); const mem = new Map(); return { get: async k => mem.get(k) ?? null, set: async (k, x) => { mem.set(k, x); } }; })();
+  : (() => {
+    if (IS_PROD && ALLOW_MEMORY_DB !== '1') { console.error('UPSTASH_REDIS_REST_URL missing in production. Refusing to start with a volatile in-memory DB (set ALLOW_MEMORY_DB=1 to override).'); process.exit(1); }
+    console.warn('!!! UPSTASH env missing: in-memory store (data lost on restart) !!!');
+    const mem = new Map();
+    return { get: async k => mem.get(k) ?? null, set: async (k, x) => { mem.set(k, x); }, rpush: async () => {} };
+  })();
 
 const DEFAULT = () => ({
   users: {}, games: [
@@ -47,7 +61,17 @@ async function load() {
   Object.keys(d.settings).forEach(k => { if (db.settings[k] === undefined) db.settings[k] = d.settings[k]; });
   migrate();
 }
-const save = () => redis.set('arenadb', JSON.stringify(db));
+const archive = []; // ledger rows trimmed from the live list are appended to Redis list "ledger:archive" (never discarded)
+async function save() {
+  try {
+    await redis.set('arenadb', JSON.stringify(db));
+    if (archive.length) { const rows = archive.splice(0).map(r => JSON.stringify(r)); try { await redis.rpush('ledger:archive', ...rows); } catch (e) { archive.push(...rows.map(r => JSON.parse(r))); } }
+  } catch (e) {
+    console.error('Redis save failed:', e.message);
+    try { await load(); } catch { /* keep going; error below tells the client */ }
+    const err = new Error('Could not save to database. Nothing was changed, please retry.'); err.status = 503; throw err;
+  }
+}
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 const num = (v, d = 0) => (isFinite(+v) ? +v : d);
 const SZ = { Solo: 1, Duo: 2, Squad: 4 };
@@ -61,10 +85,21 @@ function migrate() { // purane joins ko slot assign
 const notify = (to, title, body, image) => { db.notices.unshift({ id: uid(), title, body, image: image || '', to, at: Date.now() }); db.notices = db.notices.slice(0, 500); };
 
 const app = express();
-app.use(cors());
+app.set('trust proxy', 1);
+app.use((req, res, next) => { res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'SAMEORIGIN', 'Referrer-Policy': 'same-origin' }); next(); });
+app.use(cors(BASE_URL ? { origin: BASE_URL } : {}));
+const hits = new Map();
+const rl = (max, ms) => (req, res, next) => {
+  if (req.method !== 'POST') return next();
+  const k = req.baseUrl + req.path + '|' + req.ip, now = Date.now(), h = (hits.get(k) || []).filter(t => now - t < ms);
+  if (h.length >= max) return res.status(429).json({ error: 'Too many attempts. Please wait and try again.' });
+  h.push(now); hits.set(k, h); if (hits.size > 5000) hits.clear(); next();
+};
 app.use(express.json({ limit: '3mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+app.use(['/api/login', '/api/signup', '/api/admin/login'], rl(10, 15 * 60e3));
+app.use(['/api/deposit', '/api/withdraw', '/api/promo', '/api/daily', '/api/join', '/api/change-slot', '/api/password', '/api/ticket', '/api/admin/upload'], rl(30, 60e3));
 app.use('/api', (req, res, next) => {
   if (db && db.settings.maintenance && !req.path.startsWith('/admin') && req.path !== '/settings' && req.path !== '/zapupi/webhook') return res.status(503).json({ error: db.settings.maintenanceMsg });
   next();
@@ -86,7 +121,7 @@ const total = u => u.dep + u.win + u.bonus;
 const pub = u => ({ id: u.id, username: u.username, dep: u.dep, win: u.win, bonus: u.bonus, total: total(u), matches: u.matches, kills: u.kills, earning: u.earning, refCode: u.username });
 function tx(u, type, wallet, amt, note) {
   db.txns.unshift({ id: Math.floor(1e6 + Math.random() * 9e6), uid: u.id, type, wallet, amt, bal: u[wallet], note, at: Date.now() });
-  db.txns = db.txns.slice(0, 5000);
+  archive.push(...db.txns.splice(5000));
 }
 
 // ====== AUTH ======
@@ -126,10 +161,11 @@ app.get('/api/games', wrap(async (req, res) => {
   res.json(db.games.map(g => ({ ...g, count: db.matches.filter(m => m.gameId === g.id && m.status === 'upcoming').length })));
 }));
 
+const roomOpen = m => m.status === 'ongoing' || !m.roomShowMins || Date.now() >= m.time - m.roomShowMins * 6e4;
 const matchView = (m, u) => {
   const joined = db.joins.filter(j => j.matchId === m.id), sz = sizeOf(m);
   const mine = u && joined.find(j => j.uid === u.id);
-  return { id: m.id, gameId: m.gameId, title: m.title, image: m.image, time: m.time, prize: m.prize, perKill: m.perKill, fee: m.fee, type: m.type, map: m.map, slots: m.slots, size: sz, capacity: m.slots * sz, filled: joined.length, status: m.status, joined: !!mine, mine: mine ? { slot: mine.slot, pos: mine.pos } : null, seats: joined.map(j => ({ slot: j.slot, pos: j.pos, ign: j.ign, me: !!(u && j.uid === u.id) })), rankPrizes: m.rankPrizes || [], splitPrize: !!m.splitPrize, room: mine && m.status !== 'resulted' ? { id: m.roomId, pass: m.roomPass } : null, result: m.status === 'resulted' ? m.result : null };
+  return { id: m.id, gameId: m.gameId, title: m.title, image: m.image, time: m.time, prize: m.prize, perKill: m.perKill, fee: m.fee, type: m.type, map: m.map, slots: m.slots, size: sz, capacity: m.slots * sz, filled: joined.length, status: m.status, joined: !!mine, mine: mine ? { slot: mine.slot, pos: mine.pos } : null, seats: joined.map(j => ({ slot: j.slot, pos: j.pos, ign: j.ign, me: !!(u && j.uid === u.id) })), rankPrizes: m.rankPrizes || [], splitPrize: !!m.splitPrize, room: mine && m.status === 'upcoming' || mine && m.status === 'ongoing' ? (roomOpen(m) ? { id: m.roomId, pass: m.roomPass } : { hidden: true, showAt: m.time - m.roomShowMins * 6e4 }) : null, result: m.status === 'resulted' ? m.result : null };
 };
 app.get('/api/matches', wrap(async (req, res) => {
   const u = (() => { try { return user(req); } catch { return null; } })();
@@ -145,6 +181,7 @@ app.post('/api/join', wrap(async (req, res) => {
   const ign = String(req.body.ign || '').trim();
   if (!m || m.status !== 'upcoming') fail('Match not available');
   if (!ign) fail('In-game name required');
+  if (m.regDeadline && Date.now() > m.regDeadline) fail('Registration is closed');
   const joined = db.joins.filter(j => j.matchId === m.id);
   if (joined.some(j => j.uid === u.id)) fail('Already joined');
   const sz = sizeOf(m), slot = Math.floor(num(req.body.slot)), pos = Math.floor(num(req.body.pos));
@@ -227,7 +264,7 @@ app.post('/api/deposit', wrap(async (req, res) => {
 }));
 
 async function settleDeposit(d) {
-  if (d.status !== 'pending') return d;
+  if (d.status !== 'pending' || !ZAPUPI_TOKEN || !ZAPUPI_SECRET) return d;
   const r = await fetch(`${ZAPUPI_API}/order-status`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ token_key: ZAPUPI_TOKEN, secret_key: ZAPUPI_SECRET, order_id: d.id }) });
   const j = await r.json().catch(() => ({}));
   const st = String(j.status || j.data?.status || '').toLowerCase();
@@ -278,12 +315,14 @@ app.post('/api/withdraw', wrap(async (req, res) => {
 
 // ====== ADMIN ======
 app.post('/api/admin/login', wrap(async (req, res) => {
-  if (req.body.username !== ADMIN_USER || req.body.password !== ADMIN_PASS) fail('Wrong admin login', 401);
+  if (!ADMIN_ENABLED) fail('Admin login disabled: set a strong ADMIN_PASS in Render', 503);
+  const eq = (a, b) => { const x = crypto.createHash('sha256').update(String(a)).digest(), y = crypto.createHash('sha256').update(String(b)).digest(); return crypto.timingSafeEqual(x, y); };
+  if (!(eq(req.body.username, ADMIN_USER) & eq(req.body.password, ADMIN_PASS))) fail('Wrong admin login', 401);
   res.json({ token: jwt.sign({ admin: true }, JWT_SECRET, { expiresIn: '12h' }) });
 }));
 app.get('/api/admin/stats', wrap(async (req, res) => {
   admin(req);
-  res.json({ banned: Object.values(db.users).filter(u => u.banned).length, liabilities: Object.values(db.users).reduce((a, u) => a + u.win + u.dep + u.bonus, 0), pendingDeposits: db.deposits.filter(d => d.status === 'pending').length, openTickets: db.tickets.filter(t => t.status === 'open').length, users: Object.keys(db.users).length, matches: db.matches.length, pendingWithdraw: db.withdrawals.filter(w => w.status === 'pending').length, depositTotal: db.deposits.filter(d => d.status === 'approved').reduce((a, d) => a + d.amount, 0), withdrawTotal: db.withdrawals.filter(w => w.status === 'approved').reduce((a, d) => a + d.amount, 0) });
+  res.json({ dbKB: Math.round(JSON.stringify(db).length / 1024), banned: Object.values(db.users).filter(u => u.banned).length, liabilities: Object.values(db.users).reduce((a, u) => a + u.win + u.dep + u.bonus, 0), pendingDeposits: db.deposits.filter(d => d.status === 'pending').length, openTickets: db.tickets.filter(t => t.status === 'open').length, users: Object.keys(db.users).length, matches: db.matches.length, pendingWithdraw: db.withdrawals.filter(w => w.status === 'pending').length, depositTotal: db.deposits.filter(d => d.status === 'approved').reduce((a, d) => a + d.amount, 0), withdrawTotal: db.withdrawals.filter(w => w.status === 'approved').reduce((a, d) => a + d.amount, 0) });
 }));
 app.get('/api/admin/users', wrap(async (req, res) => { admin(req); res.json(Object.values(db.users).map(u => ({ ...pub(u), banned: !!u.banned, createdAt: u.createdAt }))); }));
 app.post('/api/admin/user/:id', wrap(async (req, res) => {
@@ -293,8 +332,14 @@ app.post('/api/admin/user/:id', wrap(async (req, res) => {
   log('User ' + action + ' ' + u.username);
   if (action === 'ban') u.banned = true;
   else if (action === 'unban') u.banned = false;
-  else if (action === 'add' && ['dep', 'win', 'bonus'].includes(wallet)) { u[wallet] += num(amount); tx(u, 'credit', wallet, num(amount), 'Admin credit'); }
-  else if (action === 'deduct' && ['dep', 'win', 'bonus'].includes(wallet)) { u[wallet] = Math.max(0, u[wallet] - num(amount)); tx(u, 'debit', wallet, num(amount), 'Admin debit'); }
+  else if ((action === 'add' || action === 'deduct') && ['dep', 'win', 'bonus'].includes(wallet)) {
+    const a = num(amount), reason = String(req.body.reason || '').trim().slice(0, 120);
+    if (a <= 0) fail('Amount must be positive'); if (reason.length < 3) fail('Reason is required for balance adjustments');
+    const d = action === 'add' ? a : Math.min(a, u[wallet]);
+    u[wallet] += action === 'add' ? d : -d;
+    tx(u, action === 'add' ? 'credit' : 'debit', wallet, d, 'Admin adjustment by ' + ADMIN_USER + ': ' + reason);
+    log('Adjust ' + action + ' ' + d + ' ' + wallet + ' ' + u.username + ' (' + reason + ')');
+  } else fail('Unknown action');
   await save(); res.json({ ok: true });
 }));
 app.get('/api/admin/games', wrap(async (req, res) => { admin(req); res.json(db.games); }));
@@ -313,7 +358,9 @@ app.get('/api/admin/matches', wrap(async (req, res) => {
 app.post('/api/admin/match', wrap(async (req, res) => {
   admin(req);
   const b = req.body;
-  const data = { gameId: b.gameId, title: String(b.title || ''), image: b.image || '', time: new Date(b.time).getTime() || Date.now(), prize: num(b.prize), perKill: num(b.perKill), fee: num(b.fee), type: b.type || 'Solo', map: b.map || '', slots: Math.max(1, Math.floor(num(b.slots, 20))), roomId: b.roomId || '', roomPass: b.roomPass || '', rankPrizes: (Array.isArray(b.rankPrizes) ? b.rankPrizes : []).map(x => num(x)).filter(x => x > 0).slice(0, 50), splitPrize: !!b.splitPrize };
+  const data = { gameId: b.gameId, title: String(b.title || ''), image: b.image || '', time: new Date(b.time).getTime() || Date.now(), prize: num(b.prize), perKill: num(b.perKill), fee: num(b.fee), type: b.type || 'Solo', map: b.map || '', slots: Math.max(1, Math.floor(num(b.slots, 20))),
+    ...(b.regDeadline !== undefined ? { regDeadline: b.regDeadline ? new Date(b.regDeadline).getTime() || 0 : 0 } : {}),
+    ...(b.roomShowMins !== undefined ? { roomShowMins: Math.max(0, Math.floor(num(b.roomShowMins))) } : {}), roomId: b.roomId || '', roomPass: b.roomPass || '', rankPrizes: (Array.isArray(b.rankPrizes) ? b.rankPrizes : []).map(x => num(x)).filter(x => x > 0).slice(0, 50), splitPrize: !!b.splitPrize };
   if (b.id) { const m = db.matches.find(x => x.id === b.id); if (!m) fail('No match', 404);
     const nsz = SZ[data.type] || 1;
     if (db.joins.some(j => j.matchId === m.id && (j.slot > data.slots || j.pos >= nsz))) fail('Kuch players ke slots nayi setting se bahar hain — pehle unhe Move/Kick karo');
@@ -329,10 +376,11 @@ app.post('/api/admin/match/:id/status', wrap(async (req, res) => {
 }));
 app.post('/api/admin/match/:id/cancel', wrap(async (req, res) => {
   admin(req);
-  const m = db.matches.find(x => x.id === req.params.id); if (!m || m.status === 'resulted') fail('Cannot cancel');
+  const m = db.matches.find(x => x.id === req.params.id); if (!m || m.status === 'resulted' || m.status === 'cancelled') fail('Cannot cancel');
   db.joins.filter(j => j.matchId === m.id).forEach(j => { const u = db.users[j.uid]; if (u) { u.dep += num(m.fee); u.matches = Math.max(0, u.matches - 1); tx(u, 'credit', 'dep', num(m.fee), 'Refund: ' + m.title); } });
+  notify(db.joins.filter(j => j.matchId === m.id).map(j => j.uid), 'Match cancelled: ' + m.title, 'Entry fee has been refunded.');
   db.joins = db.joins.filter(j => j.matchId !== m.id);
-  db.matches = db.matches.filter(x => x.id !== m.id);
+  m.status = 'cancelled'; m.cancelledAt = Date.now(); log('Match cancelled+refunded: ' + m.title);
   await save(); res.json({ ok: true });
 }));
 // results: [{uid, kills, prize}]
@@ -341,6 +389,15 @@ app.post('/api/admin/match/:id/result', wrap(async (req, res) => {
   const m = db.matches.find(x => x.id === req.params.id); if (!m) fail('No match', 404);
   if (m.status === 'resulted') fail('Already resulted');
   const rows = Array.isArray(req.body.results) ? req.body.results : [];
+  const seen = new Set(), maxRP = Math.max(num(m.prize), ...(m.rankPrizes || []), 0);
+  rows.forEach(r => {
+    const u = db.users[r.uid];
+    if (!u || !db.joins.some(x => x.matchId === m.id && x.uid === u.id)) fail('Player not registered in this match: ' + r.uid);
+    if (seen.has(u.id)) fail('Duplicate player in results: ' + u.username);
+    seen.add(u.id);
+    if (num(r.kills) < 0 || num(r.rank) < 0 || num(r.prize) < 0) fail('Negative values not allowed');
+    if (num(r.prize) > maxRP) fail('Rank prize for ' + u.username + ' exceeds the prizes configured on this match');
+  });
   m.result = [];
   rows.forEach(r => {
     const u = db.users[r.uid]; if (!u) return;
@@ -523,9 +580,23 @@ app.post('/api/admin/match/:id/move', wrap(async (req, res) => {
 // ====== IMAGE UPLOAD (Redis me store, /img/:id se serve) ======
 app.post('/api/admin/upload', wrap(async (req, res) => {
   admin(req); const d = String(req.body.data || '');
-  if (!/^data:image\/(png|jpe?g|webp|gif);base64,/.test(d)) fail('Sirf image upload karo');
-  if (d.length > 900000) fail('Image badi hai (max ~650KB). Chhoti image lo.');
-  const id = uid() + uid(); await redis.set('img:' + id, d); res.json({ url: '/img/' + id });
+  const m = /^data:(image\/(?:png|jpeg|jpg|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(d);
+  if (!m) fail('Only PNG, JPG, WEBP or GIF images are allowed');
+  const buf = Buffer.from(m[2], 'base64');
+  if (buf.length > 650 * 1024) fail('Image too large (max 650 KB)');
+  const h = buf.subarray(0, 12), ascii = (a, b) => h.toString('ascii', a, b);
+  if (!((h[0] === 0x89 && ascii(1, 4) === 'PNG') || (h[0] === 0xFF && h[1] === 0xD8) || ascii(0, 3) === 'GIF' || (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP'))) fail('File content is not a valid image');
+  if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET) {
+    const ts = Math.floor(Date.now() / 1000), folder = 'arena';
+    const signature = crypto.createHash('sha1').update(`folder=${folder}&timestamp=${ts}${CLOUDINARY_API_SECRET}`).digest('hex');
+    const form = new FormData(); form.append('file', d); form.append('api_key', CLOUDINARY_API_KEY); form.append('timestamp', String(ts)); form.append('folder', folder); form.append('signature', signature);
+    let j; try { const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: form }); j = await r.json(); if (!r.ok || !j.secure_url) throw new Error((j.error && j.error.message) || 'upload rejected'); }
+    catch (e) { fail('Image storage failed: ' + e.message, 502); }
+    log('Image uploaded (cloudinary)'); await save();
+    return res.json({ url: j.secure_url, storage: 'cloudinary', bytes: buf.length });
+  }
+  if (ALLOW_REDIS_IMAGES !== '1') fail('Image storage is not configured. Set CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET in Render (see README).', 503);
+  const id = uid() + uid(); await redis.set('img:' + id, d); res.json({ url: '/img/' + id, storage: 'redis-legacy', bytes: buf.length });
 }));
 app.get('/img/:id', async (req, res) => {
   try {
@@ -541,4 +612,5 @@ app.get('/', (q, r) => r.sendFile(path.join(__dirname, 'index.html')));
 app.get('/favicon.ico', (q, r) => r.status(204).end());
 app.get('/health', (q, r) => r.send('ok'));
 
-load().then(() => app.listen(PORT, () => console.log('Running on', PORT)));
+if (require.main === module) load().then(() => app.listen(PORT, () => console.log('Running on', PORT))).catch(e => { console.error('Startup failed (Redis unreachable?):', e.message); process.exit(1); });
+module.exports = { app, load, getDb: () => db };

@@ -43,3 +43,26 @@ Free Render service 15 min inactivity ke baad sleep hota hai (pehla load slow). 
 - **Image upload** (admin): logo, banners, games, match banner, notification image. Image browser me compress hoti hai aur Redis me save hoti hai (`/img/<id>`), isliye Render restart par bhi safe. Max ~650KB per image.
 - **Admin → Match View**: room ID/pass update (+ players ko notification), message to all / single player, slot map with IGN + app username, Move / Kick(+refund).
 - **Admin → Result**: rank + kills enter karo → rank prize (match me set Rank prizes) + per-kill auto, total preview, winners ko notification. Duo/Squad me team ka rank sync hota hai, optional prize split.
+
+## v3 Security & reliability upgrade (this release)
+**Changed (server.js, admin.html — existing data and API shapes unchanged):**
+- Startup: refuses to run on Render without Upstash (no silent volatile DB). Admin login is disabled until `ADMIN_PASS` is set (min 8 chars, not `admin123`). Missing `JWT_SECRET` → random secret + warning.
+- Rate limits on login/signup/admin login (10 per 15 min per IP) and deposit/withdraw/promo/daily/join/upload (30/min). Timing-safe admin password check, security headers, CORS limited to `BASE_URL`.
+- Redis save failures now roll back memory from Redis and return HTTP 503 (no fake success). Ledger rows trimmed from the live list are archived in Redis list `ledger:archive`, not deleted.
+- Results: only registered players, no duplicates, prize capped by the match's configured prizes, validated before any balance is changed; second publish is rejected.
+- Admin balance adjustments require a reason (saved in ledger + activity log). Deduct records the actual amount.
+- Cancel+Refund keeps the match with status `cancelled` and notifies players.
+- New optional match fields via `/api/admin/match`: `regDeadline` (date), `roomShowMins` (room visible N minutes before start; 0 = as before).
+- Image upload: type + magic-byte + size validation; stored on **Cloudinary** (server-side signed upload). Old `/img/<id>` images keep working.
+- `/api/admin/stats` returns `dbKB` (size of the single Redis JSON blob — watch this).
+
+**New environment variables (Render → Environment):**
+| Key | Purpose |
+|---|---|
+| CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET | Image hosting (free Cloudinary account → Dashboard) |
+| ALLOW_REDIS_IMAGES=1 | Optional legacy fallback: store images in Redis (not recommended) |
+| ALLOW_MEMORY_DB=1 | Testing only |
+
+**Tests:** `npm install && npm test`.
+
+**Not done yet:** captain/teammate team system, waitlist, referral/daily-reward redesign, per-period leaderboard from verified results, notification push, new UI screens, admin UI inputs for the new match fields. Real-money deposits/withdrawals remain governed by your Zapupi setup — verify legal/age requirements yourself.
