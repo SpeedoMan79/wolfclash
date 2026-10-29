@@ -66,3 +66,6 @@ Free Render service 15 min inactivity ke baad sleep hota hai (pehla load slow). 
 **Tests:** `npm install && npm test`.
 
 **Not done yet:** captain/teammate team system, waitlist, referral/daily-reward redesign, per-period leaderboard from verified results, notification push, new UI screens, admin UI inputs for the new match fields. Real-money deposits/withdrawals remain governed by your Zapupi setup — verify legal/age requirements yourself.
+
+## v4 Premium UI
+`assets/premium.css` is a visual layer loaded after the built-in styles in `index.html` (navy/black base, blue-cyan-purple accents, glass header, floating bottom nav, glow buttons, gradient-edge cards, motion with reduced-motion support). To revert the look, delete the `<link ... premium.css>` line in `index.html`. Admin panel styling is unchanged.

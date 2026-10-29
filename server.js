@@ -607,6 +607,7 @@ app.get('/img/:id', async (req, res) => {
   } catch { res.status(500).end(); }
 });
 
+app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '1h' }));
 app.get('/admin', (q, r) => r.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/', (q, r) => r.sendFile(path.join(__dirname, 'index.html')));
 app.get('/favicon.ico', (q, r) => r.status(204).end());
