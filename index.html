@@ -229,18 +229,42 @@ async function api(p,body){
     throw new Error(j.error||'Something went wrong')}
   return j}
 function toast(m){document.querySelectorAll('.toast').forEach(x=>x.remove());const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
-function modal(h){closeM();const d=document.createElement('div');d.className='modal';d.innerHTML=`<div class="box">${h}</div>`;d.addEventListener('click',e=>{if(e.target==d)closeM()});document.body.appendChild(d)}
-function closeM(){document.querySelectorAll('.modal').forEach(x=>x.remove())}
+/* ---------- BACK / HISTORY (Android back button + edge-swipe gesture) ----------
+   Every screen change pushes a browser-history entry; an open modal pushes one too.
+   Android system Back / swipe -> WebView.goBack -> 'popstate' -> we restore the exact previous state.
+   At the root Home screen (depth 0, no modal) there is no earlier entry, so Back exits the app. */
+let depth=0,MH=0,pendingBack=false,pendT=null;const NQ=[];
+const hstate=()=>({wc:1,view,P,d:depth,m:MH?1:0});
+function hsync(url){try{url?history.replaceState(hstate(),'',url):history.replaceState(hstate(),'')}catch{}}
+function hpush(){try{history.pushState(hstate(),'')}catch{}}
+function nav(f){pendingBack?NQ.push(f):f()}
+function flushNav(){pendingBack=false;clearTimeout(pendT);while(NQ.length)NQ.shift()()}
+function waitBack(){pendingBack=true;clearTimeout(pendT);pendT=setTimeout(flushNav,600)}
+function rmM(){document.querySelectorAll('.modal').forEach(x=>x.remove())}
+function modal(h){rmM();const d=document.createElement('div');d.className='modal';d.innerHTML=`<div class="box">${h}</div>`;d.addEventListener('click',e=>{if(e.target==d)closeM()});document.body.appendChild(d);if(!MH){MH=1;hpush()}}
+function closeM(){rmM();if(MH){MH=0;waitBack();history.back()}}
+function toRoot(then){if(depth>0){const d=depth;depth=0;MH=0;rmM();NQ.push(then);waitBack();history.go(-d)}else then()}
+addEventListener('popstate',e=>{
+  if(pendingBack){flushNav();return}
+  const hadM=MH;MH=0;rmM();
+  if(!tk()){authView();return}
+  const s=e.state;if(!s||!s.wc)return;
+  const same=s.view===view&&JSON.stringify(s.P||{})===JSON.stringify(P||{});
+  depth=s.d||0;
+  if(hadM&&same&&!s.m)return;            // Back only closed the modal
+  view=s.view||'home';P=s.P||{};render()})
 function maint(m){clearInterval(slideT);clearInterval(cdT);$('#app').innerHTML=`<div class="maint"><b>${ico('shield')}</b><h2 style="margin:10px 0">Maintenance</h2><p style="color:var(--mu)">${esc(m||S.maintenanceMsg||'Thodi der baad aao')}</p><button class="sm" style="margin-top:20px" onclick="location.reload()">Retry</button></div>`}
 
 function head(t,back,right){return `<header>${back?`<div class="back" onclick="goBack()">${ico('back')}</div>`:''}<h1>${t}</h1>${right||''}</header>`}
-function go(v,p){stack.push([view,P]);view=v;P=p||{};render()}
-function goBack(){const s=stack.pop();if(s){view=s[0];P=s[1]}else{view='home';P={}}render()}
-function tab(v){stack=[];view=v;P={};render()}
+function go(v,p){nav(()=>{const rep=MH;if(rep){MH=0;rmM()}depth++;view=v;P=p||{};rep?hsync():hpush();render()})}
+function goBack(){if(MH){closeM();return}if(depth>0)history.back();else{view='home';P={};depth=0;hsync();render()}}
+function tab(v){nav(()=>{if(v===view){P={};render();return}const rep=MH;if(rep){MH=0;rmM()}depth++;view=v;P={};rep?hsync():hpush();render()})}
 function navbar(){const t=[['board','chart','Ranks'],['notif','mega','Updates'],['home','home',''],['wallet','wallet','Wallet'],['menu','user','Profile']];return `<nav>${t.map(x=>`<div class="${view==x[0]?'on':''}" onclick="tab('${x[0]}')">${ico(x[1])}${x[2]?`<span>${x[2]}</span>`:''}</div>`).join('')}</nav>`}
 
 /* ---------- AUTH ---------- */
 async function boot(){
+  const hs=history.state;if(hs&&hs.wc){view=hs.view||'home';P=hs.P||{};depth=hs.d||0}   // restore screen after reload
+  hsync();
   try{S=await api('/settings')}catch{S={appName:'Arena Battle',depositBonus:[],banners:[]}}
   document.title=S.appName||'Arena Battle';
   if(S.maintenance&&!tk())return maint();
@@ -248,7 +272,7 @@ async function boot(){
   try{U=await api('/stats')}catch{return}
   render();
   const p=new URLSearchParams(location.search).get('paid');
-  if(p){history.replaceState({},'','/');checkPay(p)}
+  if(p){hsync('/');checkPay(p)}
 }
 function authView(signup){
   clearInterval(slideT);clearInterval(cdT);
@@ -261,12 +285,12 @@ function authView(signup){
   <p style="text-align:center;margin-top:18px;color:var(--mu);font-size:14px">${signup?'Pehle se account hai? <a onclick="authView()">Login</a>':'Naye ho? <a onclick="authView(1)">Sign up</a>'}</p></div>`}
 async function doAuth(s){
   try{const r=await api(s?'/signup':'/login',{username:$('#u').value,password:$('#p').value,ref:s?$('#rf').value:''});
-  setTk(r.token);U=await api('/stats');view='home';stack=[];P={};history.replaceState({},'','/');render();if(s)toast('Welcome! ')}catch(e){toast(e.message)}}
-function logout(){setTk(null);U=null;stack=[];view='home';authView()}
+  setTk(r.token);U=await api('/stats');toRoot(()=>{view='home';P={};depth=0;hsync('/');render();if(s)toast('Welcome! ')})}catch(e){toast(e.message)}}
+function logout(){setTk(null);U=null;authView();toRoot(()=>{view='home';P={};depth=0;hsync()})}
 
 /* ---------- RENDER ---------- */
 async function render(){
-  const a=$('#app');clearInterval(slideT);clearInterval(cdT);scrollTo(0,0);
+  const a=$('#app');clearInterval(slideT);clearInterval(cdT);scrollTo(0,0);hsync();
   if(!a.dataset.k||a.dataset.k!=view){a.innerHTML=head('')+`<div class="wrap"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>`+navbar()}
   a.dataset.k=view;
   try{await (V[view]||V.home)(a)}catch(e){if(e.message&&!/Login again|aintenance/.test(e.message)){a.innerHTML=head('Error',1)+`<div class="wrap"><div class="empty"><b>${ico('info')}</b>${esc(e.message)}<button class="sm" style="margin-top:16px" onclick="render()">Retry</button></div></div>`}}
