@@ -18,7 +18,7 @@ const {
 
 const redis = process.env.UPSTASH_REDIS_REST_URL
   ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
-  : (() => { console.warn('!!! UPSTASH env missing: in-memory store (data restart par ud jayega) !!!'); let v = null; return { get: async () => v, set: async (k, x) => { v = x; } }; })();
+  : (() => { console.warn('!!! UPSTASH env missing: in-memory store (data restart par ud jayega) !!!'); const mem = new Map(); return { get: async k => mem.get(k) ?? null, set: async (k, x) => { mem.set(k, x); } }; })();
 
 const DEFAULT = () => ({
   users: {}, games: [
@@ -45,14 +45,24 @@ async function load() {
   const d = DEFAULT();
   Object.keys(d).forEach(k => { if (db[k] === undefined) db[k] = d[k]; });
   Object.keys(d.settings).forEach(k => { if (db.settings[k] === undefined) db.settings[k] = d.settings[k]; });
+  migrate();
 }
 const save = () => redis.set('arenadb', JSON.stringify(db));
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 const num = (v, d = 0) => (isFinite(+v) ? +v : d);
+const SZ = { Solo: 1, Duo: 2, Squad: 4 };
+const sizeOf = m => SZ[m.type] || 1;
+function migrate() { // purane joins ko slot assign
+  db.matches.forEach(m => {
+    const sz = sizeOf(m), js = db.joins.filter(j => j.matchId === m.id), used = new Set(js.filter(j => j.slot).map(j => j.slot + '-' + j.pos));
+    js.filter(j => !j.slot).forEach(j => { for (let s = 1; s <= m.slots && !j.slot; s++) for (let p = 0; p < sz && !j.slot; p++) if (!used.has(s + '-' + p)) { j.slot = s; j.pos = p; used.add(s + '-' + p); } if (!j.slot) { j.slot = m.slots + 1; j.pos = 0; } });
+  });
+}
+const notify = (to, title, body, image) => { db.notices.unshift({ id: uid(), title, body, image: image || '', to, at: Date.now() }); db.notices = db.notices.slice(0, 500); };
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '3mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', (req, res, next) => {
@@ -117,9 +127,9 @@ app.get('/api/games', wrap(async (req, res) => {
 }));
 
 const matchView = (m, u) => {
-  const joined = db.joins.filter(j => j.matchId === m.id);
+  const joined = db.joins.filter(j => j.matchId === m.id), sz = sizeOf(m);
   const mine = u && joined.find(j => j.uid === u.id);
-  return { id: m.id, gameId: m.gameId, title: m.title, image: m.image, time: m.time, prize: m.prize, perKill: m.perKill, fee: m.fee, type: m.type, map: m.map, slots: m.slots, filled: joined.length, status: m.status, joined: !!mine, room: mine && m.status !== 'resulted' ? { id: m.roomId, pass: m.roomPass } : null, result: m.status === 'resulted' ? m.result : null };
+  return { id: m.id, gameId: m.gameId, title: m.title, image: m.image, time: m.time, prize: m.prize, perKill: m.perKill, fee: m.fee, type: m.type, map: m.map, slots: m.slots, size: sz, capacity: m.slots * sz, filled: joined.length, status: m.status, joined: !!mine, mine: mine ? { slot: mine.slot, pos: mine.pos } : null, seats: joined.map(j => ({ slot: j.slot, pos: j.pos, ign: j.ign, me: !!(u && j.uid === u.id) })), rankPrizes: m.rankPrizes || [], splitPrize: !!m.splitPrize, room: mine && m.status !== 'resulted' ? { id: m.roomId, pass: m.roomPass } : null, result: m.status === 'resulted' ? m.result : null };
 };
 app.get('/api/matches', wrap(async (req, res) => {
   const u = (() => { try { return user(req); } catch { return null; } })();
@@ -137,12 +147,16 @@ app.post('/api/join', wrap(async (req, res) => {
   if (!ign) fail('In-game name required');
   const joined = db.joins.filter(j => j.matchId === m.id);
   if (joined.some(j => j.uid === u.id)) fail('Already joined');
-  if (joined.length >= m.slots) fail('Joining full');
+  const sz = sizeOf(m), slot = Math.floor(num(req.body.slot)), pos = Math.floor(num(req.body.pos));
+  if (joined.length >= m.slots * sz) fail('Joining full');
+  if (slot < 1 || slot > m.slots || pos < 0 || pos >= sz) fail('Pehle slot choose karo');
+  if (joined.some(j => j.slot === slot && j.pos === pos)) fail('Ye slot abhi kisi ne le liya, dusra chuno');
   const fee = num(m.fee);
   if (total(u) < fee) fail('Insufficient balance. Recharge karo.');
   let rem = fee;
   for (const w of ['dep', 'bonus', 'win']) { const t = Math.min(u[w], rem); if (t > 0) { u[w] -= t; rem -= t; tx(u, 'debit', w, t, 'Joined ' + m.title); } }
-  db.joins.push({ id: uid(), matchId: m.id, uid: u.id, ign, at: Date.now() });
+  db.joins.push({ id: uid(), matchId: m.id, uid: u.id, ign, slot, pos, at: Date.now() });
+  if (!u.ign) u.ign = ign;
   u.matches++;
   // referral reward on first paid match
   if (fee > 0 && fee >= num(db.settings.referralMinEntry) && u.referredBy && !u.refPaid) {
@@ -154,6 +168,15 @@ app.post('/api/join', wrap(async (req, res) => {
   res.json({ ok: true, user: pub(u) });
 }));
 
+app.post('/api/change-slot', wrap(async (req, res) => {
+  const u = user(req); const m = db.matches.find(x => x.id === req.body.matchId);
+  if (!m || m.status !== 'upcoming') fail('Match not available');
+  const me = db.joins.find(j => j.matchId === m.id && j.uid === u.id); if (!me) fail('Pehle join karo');
+  const sz = sizeOf(m), slot = Math.floor(num(req.body.slot)), pos = Math.floor(num(req.body.pos));
+  if (slot < 1 || slot > m.slots || pos < 0 || pos >= sz) fail('Slot choose karo');
+  if (db.joins.some(j => j.matchId === m.id && j.slot === slot && j.pos === pos)) fail('Slot already booked');
+  me.slot = slot; me.pos = pos; await save(); res.json({ ok: true });
+}));
 app.get('/api/my-matches', wrap(async (req, res) => {
   const u = user(req);
   const st = req.query.status || 'upcoming';
@@ -175,7 +198,7 @@ app.get('/api/wallet', wrap(async (req, res) => {
   res.json({ ...pub(u), history: db.txns.filter(t => t.uid === u.id).slice(0, 50), deposits: db.deposits.filter(d => d.uid === u.id).slice(-30).reverse(), withdrawals: db.withdrawals.filter(w => w.uid === u.id).slice(-30).reverse() });
 }));
 
-app.get('/api/notifications', wrap(async (req, res) => { user(req); res.json(db.notices.slice(0, 50)); }));
+app.get('/api/notifications', wrap(async (req, res) => { const u = user(req); res.json(db.notices.filter(n => !n.to || n.to.includes(u.id)).slice(0, 50)); }));
 
 // ====== DEPOSIT (ZAPUPI) ======
 function bonusFor(amount) {
@@ -285,13 +308,16 @@ app.post('/api/admin/game', wrap(async (req, res) => {
 app.delete('/api/admin/game/:id', wrap(async (req, res) => { admin(req); db.games = db.games.filter(g => g.id !== req.params.id); await save(); res.json({ ok: true }); }));
 app.get('/api/admin/matches', wrap(async (req, res) => {
   admin(req);
-  res.json(db.matches.slice().reverse().map(m => ({ ...m, players: db.joins.filter(j => j.matchId === m.id).map(j => ({ uid: j.uid, ign: j.ign, username: db.users[j.uid]?.username })) })));
+  res.json(db.matches.slice().reverse().map(m => ({ ...m, size: sizeOf(m), players: db.joins.filter(j => j.matchId === m.id).map(j => ({ uid: j.uid, ign: j.ign, slot: j.slot, pos: j.pos, username: db.users[j.uid]?.username })) })));
 }));
 app.post('/api/admin/match', wrap(async (req, res) => {
   admin(req);
   const b = req.body;
-  const data = { gameId: b.gameId, title: String(b.title || ''), image: b.image || '', time: new Date(b.time).getTime() || Date.now(), prize: num(b.prize), perKill: num(b.perKill), fee: num(b.fee), type: b.type || 'Solo', map: b.map || '', slots: Math.max(1, Math.floor(num(b.slots, 20))), roomId: b.roomId || '', roomPass: b.roomPass || '' };
-  if (b.id) { const m = db.matches.find(x => x.id === b.id); if (!m) fail('No match', 404); Object.assign(m, data); }
+  const data = { gameId: b.gameId, title: String(b.title || ''), image: b.image || '', time: new Date(b.time).getTime() || Date.now(), prize: num(b.prize), perKill: num(b.perKill), fee: num(b.fee), type: b.type || 'Solo', map: b.map || '', slots: Math.max(1, Math.floor(num(b.slots, 20))), roomId: b.roomId || '', roomPass: b.roomPass || '', rankPrizes: (Array.isArray(b.rankPrizes) ? b.rankPrizes : []).map(x => num(x)).filter(x => x > 0).slice(0, 50), splitPrize: !!b.splitPrize };
+  if (b.id) { const m = db.matches.find(x => x.id === b.id); if (!m) fail('No match', 404);
+    const nsz = SZ[data.type] || 1;
+    if (db.joins.some(j => j.matchId === m.id && (j.slot > data.slots || j.pos >= nsz))) fail('Kuch players ke slots nayi setting se bahar hain — pehle unhe Move/Kick karo');
+    Object.assign(m, data); }
   else db.matches.push({ id: uid(), status: 'upcoming', ...data });
   await save(); res.json({ ok: true });
 }));
@@ -318,12 +344,15 @@ app.post('/api/admin/match/:id/result', wrap(async (req, res) => {
   m.result = [];
   rows.forEach(r => {
     const u = db.users[r.uid]; if (!u) return;
-    const kills = Math.floor(num(r.kills)); const amt = num(r.prize) + kills * num(m.perKill);
+    const j = db.joins.find(x => x.matchId === m.id && x.uid === u.id) || {};
+    const kills = Math.floor(num(r.kills)), rank = Math.floor(num(r.rank)), rp = num(r.prize), kp = kills * num(m.perKill), amt = rp + kp;
     u.kills += kills;
     if (amt > 0) { u.win += amt; u.earning += amt; tx(u, 'prize', 'win', amt, 'Winning: ' + m.title); }
-    m.result.push({ username: u.username, kills, prize: amt });
+    m.result.push({ uid: u.id, username: u.username, ign: j.ign || '', slot: j.slot, pos: j.pos, rank, kills, prize: amt, rankPrize: rp, killPrize: kp });
+    notify([u.id], 'Result: ' + m.title, (rank ? 'Rank #' + rank + ' • ' : '') + kills + ' kills' + (amt > 0 ? ' • You won ₹' + amt + ' 🎉' : ''));
   });
-  m.status = 'resulted';
+  m.result.sort((a, b) => (a.rank || 999) - (b.rank || 999) || b.kills - a.kills);
+  m.status = 'resulted'; log('Result published: ' + m.title);
   await save(); res.json({ ok: true });
 }));
 app.get('/api/admin/withdrawals', wrap(async (req, res) => { admin(req); res.json(db.withdrawals.slice().reverse()); }));
@@ -349,7 +378,7 @@ app.post('/api/admin/settings', wrap(async (req, res) => {
 }));
 app.post('/api/admin/notice', wrap(async (req, res) => {
   admin(req);
-  db.notices.unshift({ id: uid(), title: String(req.body.title || ''), body: String(req.body.body || ''), at: Date.now() });
+  db.notices.unshift({ id: uid(), title: String(req.body.title || ''), body: String(req.body.body || ''), image: String(req.body.image || ''), at: Date.now() });
   await save(); res.json({ ok: true });
 }));
 
@@ -462,6 +491,50 @@ app.post('/api/admin/broadcast-bonus', wrap(async (req, res) => {
   Object.values(db.users).forEach(u => { u.bonus += a; tx(u, 'credit', 'bonus', a, req.body.note || 'Bonus from admin'); });
   log('Broadcast bonus ' + a); await save(); res.json({ ok: true });
 }));
+
+// ====== MATCH MANAGE: room / message / kick / move ======
+const joinsOf = m => db.joins.filter(j => j.matchId === m.id);
+const MM = req => { const m = db.matches.find(x => x.id === req.params.id); if (!m) fail('No match', 404); return m; };
+app.post('/api/admin/match/:id/room', wrap(async (req, res) => {
+  admin(req); const m = MM(req);
+  m.roomId = String(req.body.roomId || ''); m.roomPass = String(req.body.roomPass || '');
+  if (req.body.notify) notify(joinsOf(m).map(j => j.uid), 'Room details: ' + m.title, 'Room ID: ' + m.roomId + '\nPassword: ' + m.roomPass);
+  log('Room updated: ' + m.title); await save(); res.json({ ok: true });
+}));
+app.post('/api/admin/match/:id/message', wrap(async (req, res) => {
+  admin(req); const m = MM(req); const body = String(req.body.body || '').trim(); if (!body) fail('Message likho');
+  const to = req.body.uid ? [String(req.body.uid)] : joinsOf(m).map(j => j.uid);
+  notify(to, String(req.body.title || m.title), body); await save(); res.json({ ok: true, sent: to.length });
+}));
+app.post('/api/admin/match/:id/kick', wrap(async (req, res) => {
+  admin(req); const m = MM(req); const j = joinsOf(m).find(x => x.uid === req.body.uid); if (!j) fail('Player not found');
+  const u = db.users[j.uid];
+  if (u) { u.dep += num(m.fee); u.matches = Math.max(0, u.matches - 1); tx(u, 'credit', 'dep', num(m.fee), 'Refund (removed): ' + m.title); notify([u.id], 'Removed from match', m.title + ' se aapko hata diya gaya. Fee refund ho gayi.'); }
+  db.joins = db.joins.filter(x => x !== j); log('Kick ' + (u && u.username) + ' from ' + m.title); await save(); res.json({ ok: true });
+}));
+app.post('/api/admin/match/:id/move', wrap(async (req, res) => {
+  admin(req); const m = MM(req); const j = joinsOf(m).find(x => x.uid === req.body.uid); if (!j) fail('Player not found');
+  const sz = sizeOf(m), slot = Math.floor(num(req.body.slot)), pos = Math.floor(num(req.body.pos));
+  if (slot < 1 || slot > m.slots || pos < 0 || pos >= sz) fail('Slot galat hai');
+  if (joinsOf(m).some(x => x !== j && x.slot === slot && x.pos === pos)) fail('Slot already booked');
+  j.slot = slot; j.pos = pos; await save(); res.json({ ok: true });
+}));
+
+// ====== IMAGE UPLOAD (Redis me store, /img/:id se serve) ======
+app.post('/api/admin/upload', wrap(async (req, res) => {
+  admin(req); const d = String(req.body.data || '');
+  if (!/^data:image\/(png|jpe?g|webp|gif);base64,/.test(d)) fail('Sirf image upload karo');
+  if (d.length > 900000) fail('Image badi hai (max ~650KB). Chhoti image lo.');
+  const id = uid() + uid(); await redis.set('img:' + id, d); res.json({ url: '/img/' + id });
+}));
+app.get('/img/:id', async (req, res) => {
+  try {
+    const d = await redis.get('img:' + req.params.id.replace(/[^a-z0-9]/gi, ''));
+    if (!d || typeof d !== 'string') return res.status(404).end();
+    res.set({ 'Content-Type': d.slice(5, d.indexOf(';')), 'Cache-Control': 'public,max-age=31536000,immutable' });
+    res.send(Buffer.from(d.slice(d.indexOf(',') + 1), 'base64'));
+  } catch { res.status(500).end(); }
+});
 
 app.get('/admin', (q, r) => r.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/', (q, r) => r.sendFile(path.join(__dirname, 'index.html')));

@@ -36,3 +36,10 @@ Webhook URL: `https://your-app.onrender.com/api/zapupi/webhook`
 
 ## Note
 Free Render service 15 min inactivity ke baad sleep hota hai (pehla load slow). Data Upstash me safe rehta hai.
+
+## v2 Upgrade
+- **eSports UI** (user app): angular HUD look, Chakra Petch font, raised Home button, prize-pool badges, LIVE tags.
+- **Slot system**: Solo = 1 user / 1 slot • Duo = Team N → A,B • Squad = A,B,C,D. User join karte waqt slot choose karta hai, **Change slot** bhi kar sakta hai. Admin: Slots = players (Solo) ya teams (Duo/Squad).
+- **Image upload** (admin): logo, banners, games, match banner, notification image. Image browser me compress hoti hai aur Redis me save hoti hai (`/img/<id>`), isliye Render restart par bhi safe. Max ~650KB per image.
+- **Admin → Match View**: room ID/pass update (+ players ko notification), message to all / single player, slot map with IGN + app username, Move / Kick(+refund).
+- **Admin → Result**: rank + kills enter karo → rank prize (match me set Rank prizes) + per-kill auto, total preview, winners ko notification. Duo/Squad me team ka rank sync hota hai, optional prize split.

@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070d1f">
 <title>Arena Battle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#070d1f;--s1:#101a33;--s2:#16223f;--s3:#1d2b50;--line:#ffffff14;--tx:#e8eeff;--mu:#8fa0c8;
 --ac:#6a5cff;--ac2:#00d2ff;--gold:#ffc233;--g:#2ee59d;--r:#ff4d6d;--grad:linear-gradient(135deg,#6a5cff,#00b8ff)}
@@ -88,6 +89,36 @@ nav div.on{color:#fff;background:var(--s2)}nav div.on svg{stroke:var(--ac2)}
 .msg{max-width:82%;padding:10px 12px;border-radius:14px;margin-bottom:8px;font-size:14px;line-height:1.4}.msg.user{background:var(--ac);margin-left:auto;border-bottom-right-radius:4px}.msg.admin{background:var(--s2);border-bottom-left-radius:4px}.msg small{display:block;opacity:.6;font-size:10px;margin-top:3px}
 .maint{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}.maint b{font-size:64px}
 .sk{height:90px;border-radius:18px;background:linear-gradient(90deg,var(--s1),var(--s2),var(--s1));background-size:200% 100%;animation:sk 1.2s infinite;margin-bottom:12px}@keyframes sk{to{background-position:-200% 0}}
+
+/* ===== eSports skin ===== */
+:root{--bg:#0c0a1d;--s1:#15122e;--s2:#1e1a42;--s3:#2a2563;--line:#ffffff17;--ac:#ff5b2e;--ac2:#22e4ff;--gold:#ffc83d;--grad:linear-gradient(135deg,#ff5b2e,#ff2e63)}
+*{font-family:'Inter',system-ui,sans-serif}
+h1,h2,h3,.h2,nav div,.g3 b,.bal h1,.stats3 b,.tabs div,button,.im,.hero,.pz,.ty,.seat b,.team>span,.rr b:first-child,.code{font-family:'Chakra Petch',system-ui,sans-serif}
+body{background:radial-gradient(700px 360px at 90% -90px,#ff5b2e30,transparent 70%),radial-gradient(600px 380px at -15% 8%,#22e4ff1c,transparent 70%),var(--bg)}
+header{background:#0c0a1de6;border-bottom:1px solid #ff5b2e44}
+.card,.game,.hero,.ref,.bal{border-radius:6px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+.li,.rank,.tx,.hist,.stats3 div,.mm div,.qa div,.chips div,.marq,.slides{border-radius:10px}
+button{border-radius:6px;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);letter-spacing:.3px}
+button.sm{padding:9px 20px}
+.tabs div.on{clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+nav{background:#0f0c26f7;border-top:1px solid #ff5b2e55}
+nav div.on{background:transparent;color:var(--ac)}nav div.on svg{stroke:var(--ac)}
+nav div:nth-child(3){position:relative;top:-18px;flex:0 0 62px;height:62px;border-radius:50%;justify-content:center;margin:0 8px;background:var(--grad);color:#fff;box-shadow:0 8px 26px #ff2e6366;border:3px solid var(--bg)}
+nav div:nth-child(3) svg,nav div.on:nth-child(3) svg{stroke:#fff}nav div:nth-child(3).on{color:#fff}
+.hero{background:linear-gradient(135deg,#3a0f55,#b3123a 60%,#ff7a2e)}
+.m{border-left:3px solid var(--ac)}.m .im{height:150px}
+.pz{position:absolute;top:10px;left:10px;background:#000c;border:1px solid var(--gold);color:var(--gold);padding:4px 16px 4px 10px;font-weight:700;font-size:15px;text-shadow:none;clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%)}
+.pz small{font-size:9px;color:#fff9;margin-left:5px;font-weight:500}
+.ty{display:inline-block;background:var(--c);color:#06121a;font-weight:700;font-size:11px;padding:2px 12px;margin-right:6px;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.g3 b{color:var(--gold)}.g3 div:nth-child(n+4) b{color:var(--tx)}
+.fee{display:flex;justify-content:space-between;background:var(--s2);padding:10px 12px;border-radius:10px;margin:10px 0;font-size:13px;color:var(--mu)}.fee b{color:var(--gold)}
+.solo{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
+.teams{display:grid;gap:8px;margin:8px 0}.team{background:var(--s2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:10px}.team>span{font-weight:700;font-size:13px;width:58px;flex:none}.sr{display:grid;grid-template-columns:repeat(auto-fit,minmax(56px,1fr));gap:6px;flex:1}
+.seat{background:var(--s3);border:1.5px solid transparent;border-radius:9px;padding:7px 2px;text-align:center;cursor:pointer;min-width:0}.seat b{display:block;font-size:15px}.seat small{display:block;font-size:10px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px}
+.seat.tk{opacity:.5;cursor:not-allowed;background:#ff4d6d22}.seat.me{background:#22e4ff2a;border-color:var(--ac2);cursor:default}.seat.sel{background:var(--grad);border-color:#fff}.seat.sel small{color:#fff}
+.lg{display:flex;gap:10px;font-size:11px;color:var(--mu);align-items:center;flex-wrap:wrap}.lg i{width:10px;height:10px;border-radius:3px;display:inline-block}.lf{background:var(--s3)}.lt{background:#ff4d6d66}.lm{background:var(--ac2)}.ls{background:var(--ac)}
+.mu{color:var(--mu);font-size:13px;text-align:center;margin:10px 0}.mu b{color:var(--gold)}
+.rr{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}.rr b:first-child{width:30px;color:var(--gold)}.rr span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.rr em{font-style:normal;color:var(--mu);font-size:12px}
 </style></head><body>
 <div id="app"></div>
 <script>
@@ -232,7 +263,7 @@ async stats(a){
   <div class="card"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mu)"><span>Win rate</span><span>${st.winRate}%</span></div><div class="bar" style="margin-top:8px"><i style="width:${st.winRate}%"></i></div></div></div>`},
 async notif(a){
   const n=await api('/notifications');
-  a.innerHTML=head('Notifications',1)+`<div class="wrap">${n.map(x=>`<div class="card"><b>${esc(x.title)}</b><p style="color:var(--mu);margin-top:5px;font-size:14px;line-height:1.5">${esc(x.body)}</p><small style="color:var(--mu);font-size:11px">${fmtT(x.at)}</small></div>`).join('')||'<div class="empty"><b>🔔</b>Abhi kuch nahi</div>'}</div>`},
+  a.innerHTML=head('Notifications',1)+`<div class="wrap">${n.map(x=>`<div class="card"><b>${esc(x.title)}</b><p style="color:var(--mu);margin-top:5px;font-size:14px;line-height:1.5;white-space:pre-wrap">${esc(x.body)}</p>${x.image?`<img src="${esc(x.image)}" style="width:100%;border-radius:10px;margin-top:8px">`:''}<small style="color:var(--mu);font-size:11px">${fmtT(x.at)}</small></div>`).join('')||'<div class="empty"><b>🔔</b>Abhi kuch nahi</div>'}</div>`},
 async support(a){
   const t=await api('/tickets');
   a.innerHTML=head('Help & Support',1)+`<div class="wrap"><div class="card"><label>Subject</label><input id="ts" placeholder="Payment / Match / Account…"><label>Message</label><textarea id="tm" rows="3" placeholder="Apni problem likho"></textarea><button onclick="newTicket()">Send</button></div>
@@ -248,18 +279,22 @@ async function listM(a,my){
   const s=P.s||'upcoming';
   const m=await api(my?'/my-matches?status='+s:`/matches?game=${P.g}&status=${s}`);window._M=m;
   a.innerHTML=head(my?'My Matches':esc(P.n||'Contests'),1)+`<div class="tabs">${['ongoing','upcoming','resulted'].map(x=>`<div class="${s==x?'on':''}" onclick="P.s='${x}';render()">${x=='resulted'?'Completed':x[0].toUpperCase()+x.slice(1)}</div>`).join('')}</div><div class="wrap">${m.map((x,i)=>mcard(x,i)).join('')||`<div class="empty"><b>🎮</b>No ${s} matches</div>`}</div>`}
+let SEL=null;const LT='ABCD';
+const slotLbl=(s,p,z)=>z>1?`Team ${s} · ${LT[p]}`:`Slot ${s}`;
+function seatGrid(x,pick){let h='';for(let s=1;s<=x.slots;s++){const c=[];for(let p=0;p<x.size;p++){const t=x.seats.find(z=>z.slot==s&&z.pos==p);c.push(`<div class="seat ${t?(t.me?'me':'tk'):''}" ${t||!pick?'':`onclick="pickSeat(${s},${p},${x.size},this)"`}><b>${x.size>1?LT[p]:s}</b><small>${t?esc(t.ign):'Free'}</small></div>`)}h+=x.size>1?`<div class="team"><span>Team ${s}</span><div class="sr">${c.join('')}</div></div>`:c.join('')}return `<div class="${x.size>1?'teams':'solo'}">${h}</div>`}
+function pickSeat(s,p,z,el){SEL={s,p};document.querySelectorAll('.seat.sel').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');$('#sel').innerHTML='Selected: <b>'+slotLbl(s,p,z)+'</b>'}
 function mcard(x,i){
-  const full=x.filled>=x.slots,pct=Math.round(x.filled/x.slots*100);
-  return `<div class="card m"><div class="im" style="${x.image?`background-image:linear-gradient(#0000,#000b),url('${esc(x.image)}')`:''}">${esc(x.title.slice(0,28))}<span class="tag">${x.status=='upcoming'?'⏱ <span data-cd="'+x.time+'"></span>':x.status}</span></div>
-  <div class="bd"><h3 onclick="detail(${i})" style="cursor:pointer">${esc(x.title)}</h3><small>${fmtT(x.time)} • #${x.id.slice(0,6)}</small>
-  <div class="g3"><div>PRIZE POOL<b>₹${x.prize}</b></div><div>PER KILL<b>₹${x.perKill}</b></div><div>ENTRY FEE<b>₹${x.fee}</b></div><div>TYPE<b>${esc(x.type)}</b></div><div>MAP<b>${esc(x.map||'-')}</b></div><div>SLOTS<b>${x.filled}/${x.slots}</b></div></div>
+  const cap=x.capacity,full=x.filled>=cap,pct=Math.round(x.filled/cap*100),C={Solo:'#22e4ff',Duo:'#ffc83d',Squad:'#ff5b2e'}[x.type]||'#22e4ff';
+  return `<div class="card m"><div class="im" onclick="detail(${i})" style="${x.image?`background-image:linear-gradient(#0000 30%,#000c),url('${esc(x.image)}')`:''}"><span class="pz">₹${x.prize}<small>PRIZE POOL</small></span><span class="tag">${x.status=='upcoming'?'⏱ <span data-cd="'+x.time+'"></span>':x.status=='ongoing'?'🔴 LIVE':x.status}</span>${esc(x.title.slice(0,30))}</div>
+  <div class="bd"><div><span class="ty" style="--c:${C}">${esc(x.type)}</span><small>${fmtT(x.time)} • #${x.id.slice(0,6)}</small></div>
+  <div class="g3"><div>ENTRY<b>₹${x.fee}</b></div><div>PER KILL<b>₹${x.perKill}</b></div><div>MAP<b>${esc(x.map||'-')}</b></div></div>
   ${x.room?`<div class="room"><span>Room ID: <b>${esc(x.room.id||'Soon')}</b></span><span>Pass: <b>${esc(x.room.pass||'Soon')}</b></span><span onclick="copyT('${esc(x.room.id)}')" style="cursor:pointer">${ico('copy')}</span></div>`:''}
-  ${x.result?`<div class="res">${x.result.map(r=>`🏅 ${esc(r.username)} — ${r.kills} kills, ₹${r.prize}`).join('<br>')}</div>`:''}
-  ${x.status=='upcoming'?`<div class="bar"><i style="width:${pct}%"></i></div><div class="foot"><span>${full?'Match full':`Only ${x.slots-x.filled} spots left`}</span>${x.joined?'<button class="g" disabled>Joined ✓</button>':full?'<button disabled>Joining Full</button>':`<button onclick="joinM(${i})">Join ₹${x.fee}</button>`}</div>`:''}</div></div>`}
-function detail(i){const x=window._M[i];modal(`<h3>${esc(x.title)}</h3><p style="color:var(--mu);font-size:13px;margin:4px 0 12px">${fmtT(x.time)} • ${esc(x.type)} • ${esc(x.map||'')}</p><div class="card" style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--mu)">${esc(S.rules)}</div><button class="o" onclick="closeM()">Close</button>`)}
-function joinM(i){const x=window._M[i];
-  modal(`<h3>Join match</h3><div class="card" style="margin:12px 0"><div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--mu)">Entry fee</span><b>₹${x.fee}</b></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--mu)">Your balance</span><b>₹${U.total}</b></div></div><label>In-game name</label><input id="ign" placeholder="Your Free Fire name" value="${esc(U.ign||'')}"><button onclick="confJoin('${x.id}')">Confirm & Join</button><button class="o" onclick="closeM()">Cancel</button>${U.total<x.fee?'<p style="color:var(--r);font-size:13px;margin-top:10px;text-align:center">Balance kam hai — pehle Add Cash karo</p>':''}`)}
-async function confJoin(id){try{await api('/join',{matchId:id,ign:$('#ign').value});closeM();toast('Joined ✓');U=await api('/stats');render()}catch(e){toast(e.message)}}
+  ${x.result?`<div style="margin-top:8px">${x.result.map(r=>`<div class="rr"><b>${r.rank?'#'+r.rank:'-'}</b><span>${esc(r.ign||r.username)} <em>${r.kills} kills</em></span><b style="color:var(--g)">₹${r.prize}</b></div>`).join('')}</div>`:''}
+  ${x.status=='upcoming'?`<div class="bar"><i style="width:${pct}%"></i></div><div class="foot"><span>${x.mine?'Your slot: <b style="color:var(--ac2)">'+slotLbl(x.mine.slot,x.mine.pos,x.size)+'</b>':full?'Match full':`${x.filled}/${cap} joined`}</span>${x.joined?`<button class="o" onclick="joinM(${i},1)">Change slot</button>`:full?'<button disabled>Full</button>':`<button onclick="joinM(${i})">Join ₹${x.fee}</button>`}</div>`:x.mine?`<div class="foot"><span>Your slot: <b style="color:var(--ac2)">${slotLbl(x.mine.slot,x.mine.pos,x.size)}</b></span></div>`:''}</div></div>`}
+function detail(i){const x=window._M[i];modal(`<h3>${esc(x.title)}</h3><p class="mu" style="text-align:left">${fmtT(x.time)} • ${esc(x.type)} • ${esc(x.map||'')}</p>${x.rankPrizes.length?`<div class="card"><b>Prize distribution</b>${x.splitPrize&&x.size>1?'<small style="color:var(--mu)"> (team me barabar split)</small>':''}${x.rankPrizes.map((p,k)=>`<div class="rr"><b>#${k+1}</b><span></span><b style="color:var(--g)">₹${p}</b></div>`).join('')}</div>`:''}<b style="font-size:13px">Slots</b>${seatGrid(x,0)}<div class="card" style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--mu)">${esc(S.rules)}</div><button class="o" onclick="closeM()">Close</button>`)}
+function joinM(i,ch){const x=window._M[i];SEL=null;
+  modal(`<h3>${ch?'Change your slot':'Pick your slot'}</h3><div class="fee"><span>Entry fee <b>₹${x.fee}</b></span><span>Balance <b>₹${U.total}</b></span></div>${ch?'':`<label>In-game name</label><input id="ign" placeholder="Your in-game name" value="${esc(U.ign||'')}">`}<div class="lg" style="margin-top:8px"><i class="lf"></i>Free<i class="lt"></i>Taken<i class="lm"></i>You<i class="ls"></i>Selected</div>${seatGrid(x,1)}<p id="sel" class="mu">${x.size>1?'Team me apni jagah (A/B…) tap karo':'Apna slot number tap karo'}</p><button onclick="confJoin('${x.id}',${!!ch})">${ch?'Move to this slot':'Confirm & Join ₹'+x.fee}</button><button class="o" onclick="closeM()">Cancel</button>${!ch&&U.total<x.fee?'<p style="color:var(--r);font-size:13px;margin-top:10px;text-align:center">Balance kam hai — pehle Add Cash karo</p>':''}`)}
+async function confJoin(id,ch){if(!SEL)return toast('Pehle slot choose karo');try{await api(ch?'/change-slot':'/join',{matchId:id,ign:($('#ign')||{}).value,slot:SEL.s,pos:SEL.p});closeM();toast(ch?'Slot changed ✓':'Joined ✓');U=await api('/stats');render()}catch(e){toast(e.message);if(/slot/i.test(e.message))render()}}
 function bonusPrev(){const v=+$('#am').value;let b=0;(S.depositBonus||[]).slice().sort((x,y)=>y.dep-x.dep).some(t=>{if(v>=t.dep){b=t.bonus;return true}});$('#bp').textContent=b?`🎁 Extra +${b} bonus coins milenge!`:''}
 function wdPrev(){const v=+$('#wa').value||0,f=Math.round(v*(S.withdrawFee||0))/100;$('#wp').textContent=S.withdrawFee?`Fee ${S.withdrawFee}% = ₹${f} • You get ₹${v-f}`:''}
 async function recharge(){try{const r=await api('/deposit',{amount:$('#am').value});location.href=r.url}catch(e){toast(e.message)}}
