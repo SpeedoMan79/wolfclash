@@ -276,25 +276,16 @@ function startCd(){const f=()=>document.querySelectorAll('[data-cd]').forEach(e=
 const V={
 async home(a){
   const [g,st]=await Promise.all([api('/games'),api('/stats')]);U=st;
-  const im=S.images||{},lvl=1+Math.floor((st.matches||0)/5);
+  const lvl=1+Math.floor((st.matches||0)/5);
   const DS=[['Instant Withdrawal','Jeeto aur paisa seedha apne account me','d1',"go('withdraw')"],['Refer & Earn','Dost ko invite karo, bonus kamao','d2',"tab('earn')"],['Daily Tournaments','Roz naye contests, bade prizes','d3',"document.getElementById('gm').scrollIntoView({behavior:'smooth'})"]];
   const sl=(S.banners&&S.banners.length)?S.banners.map(b=>`<div class="sli" style="background-image:url('${esc(b.img)}')" ${b.link?`onclick="window.open('${esc(b.link)}','_blank')"`:''}></div>`):DS.map(d=>`<div class="sli ${d[2]}" onclick="${d[3]}"><div><h3>${d[0]}</h3><p>${d[1]}</p></div><span class="sic">${ico('trophy')}</span></div>`);
-  const bg=k=>im[k]?`style="background-image:linear-gradient(#0000,#000b),url('${esc(im[k])}')"`:'';
-  a.innerHTML=`<div class="hd"><div class="ibtn" onclick="tab('menu')">${ico('menu')}</div><div class="hello"><small>Welcome,</small><b>${esc(st.username)}</b><span class="lvl">Level ${lvl}</span></div><div class="tut" onclick="tutorial()">${ico('play')}Tutorial</div></div>
+  a.innerHTML=`<div class="hd"><div class="ibtn" onclick="tab('menu')">${ico('menu')}</div><div class="hello"><small>Welcome,</small><b>${esc(st.username)}</b><span class="lvl">Level ${lvl}</span></div><div class="pill" style="border-color:#ff7a1a66" onclick="tab('wallet')">${coin()}${rs(st.total)}</div></div>
   <div class="wrap" style="padding-top:6px">
-  ${S.announcement?`<div class="marq">${ico('mega')}<span>${esc(S.announcement)}</span></div>`:''}
   <div class="sld" id="sl"><div class="trk">${sl.join('')}</div></div><div class="dots" id="dts">${sl.map((_,i)=>`<i class="${i?'':'on'}"></i>`).join('')}</div>
-  <div class="trio"><div class="bcard" onclick="tab('wallet')"><div class="bl">${ico('wallet')}TOTAL BALANCE</div><div class="bv">${rs(st.total)}</div><div class="bc"><span class="w">Win ${rs(st.win)}</span><span class="d">Dep ${rs(st.dep)}</span></div></div>
-   <div class="tile t1" ${bg('addCash')} onclick="go('recharge')"><span class="ti">${ico('plus')}</span><b>ADD CASH</b></div>
-   <div class="tile t2" ${bg('refer')} onclick="tab('earn')"><em>New</em><span class="ti">${ico('gift')}</span><b>REFER &amp; EARN</b></div></div>
-  <div class="h2">My Contests<small onclick="go('my',{s:'upcoming'})" style="color:var(--ac);cursor:pointer">View All ${ico('chev')}</small></div>
+  <div class="h2">My Contests</div>
   <div class="mm"><div onclick="go('my',{s:'ongoing'})"><span>${ico('play')}</span>Ongoing<small>Live</small></div><div onclick="go('my',{s:'upcoming'})"><span>${ico('cal')}</span>Upcoming<small>Soon</small></div><div onclick="go('my',{s:'resulted'})"><span>${ico('check')}</span>Result<small>Done</small></div></div>
-  <div class="promo" ${bg('promo')}><div><h3>Play More, Win More!</h3><p>Big Prizes, Exciting Tournaments</p><button class="sm" onclick="document.getElementById('gm').scrollIntoView({behavior:'smooth'})">EXPLORE NOW</button></div><span class="sic">${ico('trophy')}</span></div>
-  <div class="qa"><div onclick="go('withdraw')"><span>${ico('out')}</span>Withdraw</div><div onclick="daily()"><span>${ico('gift')}</span>${st.dailyDone?'Claimed':'Daily Reward'}</div><div onclick="tab('earn')"><span>${ico('tag')}</span>Promo Code</div></div>
-  <div class="stats3"><div><b>${st.matches}</b><small>Matches</small></div><div><b>${st.kills}</b><small>Kills</small></div><div><b>${rs(st.earning)}</b><small>Earned</small></div></div>
-  ${S.depositBonus&&S.depositBonus.length?`<div class="hero"><h2>DEPOSIT BONUS</h2><table><tr><th>DEPOSIT</th><th>BONUS</th><th>TOTAL</th></tr>${S.depositBonus.map(b=>`<tr><td>${b.dep}</td><td>+${b.bonus}</td><td>${b.dep+b.bonus}</td></tr>`).join('')}</table></div>`:''}
-  <div class="sec" id="gm"><b>GAME-Z TOURNAMENTS</b><small>Big Winnings For All</small></div>
-  <div class="games">${g.map((x,i)=>`<div class="game" onclick="go('matches',{g:'${x.id}',n:${esc(JSON.stringify(x.name))},s:'upcoming'})"><div class="im" style="${x.image?`background-image:linear-gradient(#0000 45%,#000d),url('${esc(x.image)}')`:`background-image:linear-gradient(160deg,${G[i%G.length]},#0b0b0f)`}"><span class="cnt">${x.count} live</span><span class="gn">${esc(x.name)}</span></div></div>`).join('')||'<div class="empty">No games yet</div>'}</div>
+  <div class="sec" id="gm"><b>WOLFCLASH TOURNAMENTS</b><small>Big Winnings For All</small></div>
+  <div class="games">${g.map((x,i)=>`<div class="game" onclick="go('matches',{g:'${x.id}',n:${esc(JSON.stringify(x.name))},s:'upcoming'})"><div class="im" style="${x.image?`background-image:linear-gradient(#0000 45%,#000d),url('${esc(x.image)}')`:`background-image:linear-gradient(160deg,${G[i%G.length]},#0b0b0f)`}"><span class="cnt">${x.count} live</span><span class="gn">${esc(x.name)}</span></div></div>`).join('')||'<div class="empty" style="grid-column:1/-1">No games yet</div>'}</div>
   </div>`+navbar();
   const trk=document.querySelector('#sl .trk'),dt=document.querySelectorAll('#dts i');
   if(trk){const cur=()=>Math.round(trk.scrollLeft/(trk.firstChild.offsetWidth+10));trk.addEventListener('scroll',()=>{const k=cur();dt.forEach((d,i)=>d.classList.toggle('on',i==k))});
@@ -308,8 +299,7 @@ async board(a){
   a.innerHTML=head('Leaderboard')+`<div class="tabs">${['weekly','monthly','fulltime'].map(s=>`<div class="${r==s?'on':''}" onclick="P={r:'${s}'};render()">${s[0].toUpperCase()+s.slice(1)}</div>`).join('')}</div>
   <div class="wrap">${l.length?`<div class="pod">${pod.map((x,i)=>x?`<div class="${pc[i]}"><div class="crw">${i==1?ico('crown'):''}</div>${avh('',x.name)}<b>${esc(x.name)}</b><span>${coin()}${x.win}</span><div class="stp">${pn[i]}</div></div>`:'<div></div>').join('')}</div>`:''}
   ${l.slice(3).map((x,i)=>`<div class="rank"><div class="n">${i+4}</div>${avh('',x.name)}<b>${esc(x.name)}</b><div class="v">${coin()}${x.win}</div></div>`).join('')}
-  ${l.length?'':`<div class="empty"><b>${ico('trophy')}</b>Abhi koi winner nahi</div>`}
-  <button class="o" onclick="go('top')">View Top Players</button></div>`+navbar()},
+  ${l.length?'':`<div class="empty"><b>${ico('trophy')}</b>Abhi koi winner nahi</div>`}</div>`+navbar()},
 async top(a){
   const l=await api('/top-players');
   a.innerHTML=head('Top Players',1)+`<div class="wrap">${l.map((x,i)=>`<div class="rank ${i<3?'t'+(i+1):''}"><div class="n">${i+1}</div>${avh(x.avatar,x.name)}<b>${esc(x.name)}<small style="display:block;color:var(--mu);font-weight:400;font-size:11px">${x.matches} matches • ${x.kills} kills</small></b><div class="v">${coin()}${x.earning}</div></div>`).join('')||'<div class="empty">No players yet</div>'}</div>`},
