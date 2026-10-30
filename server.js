@@ -303,6 +303,8 @@ app.post('/api/push/unsubscribe', wrap(async (req, res) => {
   if (u.push) { u.push = u.push.filter(p => p.endpoint !== ep); await save(); }
   res.json({ ok: true });
 }));
+app.get('/manifest.json', (q, r) => { r.type('application/manifest+json'); r.set('Cache-Control', 'no-cache'); r.sendFile(path.join(__dirname, 'manifest.json')); });
+app.get(['/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/apple-touch-icon.png'], (q, r) => r.set('Cache-Control', 'public,max-age=86400').sendFile(path.join(__dirname, q.path.slice(1))));
 app.get('/sw.js', (q, r) => { r.set({ 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/' }); r.type('application/javascript'); r.sendFile(path.join(__dirname, 'sw.js')); });
 
 // ====== DEPOSIT (ZAPUPI) ======
