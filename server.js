@@ -230,8 +230,8 @@ app.get('/api/games', wrap(async (req, res) => {
 const roomOpen = m => m.status === 'ongoing' || !m.roomShowMins || Date.now() >= m.time - m.roomShowMins * 6e4;
 const matchView = (m, u) => {
   const joined = db.joins.filter(j => j.matchId === m.id), sz = sizeOf(m);
-  const mine = u && joined.find(j => j.uid === u.id);
-  return { id: m.id, gameId: m.gameId, title: m.title, image: m.image, time: m.time, prize: m.prize, perKill: m.perKill, fee: m.fee, type: m.type, map: m.map, slots: m.slots, size: sz, capacity: m.slots * sz, filled: joined.length, status: m.status, joined: !!mine, mine: mine ? { slot: mine.slot, pos: mine.pos } : null, seats: joined.map(j => ({ slot: j.slot, pos: j.pos, ign: j.ign, me: !!(u && j.uid === u.id) })), rankPrizes: m.rankPrizes || [], splitPrize: !!m.splitPrize, room: mine && m.status === 'upcoming' || mine && m.status === 'ongoing' ? (roomOpen(m) ? { id: m.roomId, pass: m.roomPass } : { hidden: true, showAt: m.time - m.roomShowMins * 6e4 }) : null, result: m.status === 'resulted' ? m.result : null };
+  const mySeats = u ? joined.filter(j => j.uid === u.id) : [], mine = mySeats[0];
+  return { mySeats: mySeats.map(j => ({ slot: j.slot, pos: j.pos })), id: m.id, gameId: m.gameId, title: m.title, image: m.image, time: m.time, prize: m.prize, perKill: m.perKill, fee: m.fee, type: m.type, map: m.map, slots: m.slots, size: sz, capacity: m.slots * sz, filled: joined.length, status: m.status, joined: !!mine, mine: mine ? { slot: mine.slot, pos: mine.pos } : null, seats: joined.map(j => ({ slot: j.slot, pos: j.pos, ign: j.ign, me: !!(u && j.uid === u.id) })), rankPrizes: m.rankPrizes || [], splitPrize: !!m.splitPrize, room: mine && m.status === 'upcoming' || mine && m.status === 'ongoing' ? (roomOpen(m) ? { id: m.roomId, pass: m.roomPass } : { hidden: true, showAt: m.time - m.roomShowMins * 6e4 }) : null, result: m.status === 'resulted' ? m.result : null };
 };
 app.get('/api/matches', wrap(async (req, res) => {
   const u = (() => { try { return user(req); } catch { return null; } })();
@@ -244,30 +244,40 @@ app.get('/api/matches', wrap(async (req, res) => {
 app.post('/api/join', wrap(async (req, res) => {
   const u = user(req);
   const m = db.matches.find(x => x.id === req.body.matchId);
-  const ign = String(req.body.ign || '').trim();
   if (!m || m.status !== 'upcoming') fail('Match not available');
-  if (!ign) fail('In-game name required');
   if (m.regDeadline && Date.now() > m.regDeadline) fail('Registration is closed');
-  const joined = db.joins.filter(j => j.matchId === m.id);
-  if (joined.some(j => j.uid === u.id)) fail('Already joined');
-  const sz = sizeOf(m), slot = Math.floor(num(req.body.slot)), pos = Math.floor(num(req.body.pos));
-  if (joined.length >= m.slots * sz) fail('Joining full');
-  if (slot < 1 || slot > m.slots || pos < 0 || pos >= sz) fail('Pehle slot choose karo');
-  if (joined.some(j => j.slot === slot && j.pos === pos)) fail('Ye slot abhi kisi ne le liya, dusra chuno');
-  const fee = num(m.fee);
+  const sz = sizeOf(m);
+  // seats: [{slot,pos,ign}] — Duo/Squad me ek user apni team ki 1..N seats ek saath le sakta hai (purana single slot/pos/ign format bhi chalta hai)
+  const seats = (Array.isArray(req.body.seats) && req.body.seats.length ? req.body.seats : [{ slot: req.body.slot, pos: req.body.pos, ign: req.body.ign }])
+    .slice(0, 8).map(s => ({ slot: Math.floor(num(s && s.slot)), pos: Math.floor(num(s && s.pos)), ign: String((s && s.ign) || '').trim().slice(0, 30) }));
+  const joined = db.joins.filter(j => j.matchId === m.id), mine = joined.filter(j => j.uid === u.id);
+  if (mine.length && sz === 1) fail('Already joined');
+  if (mine.length + seats.length > sz) fail(mine.length ? 'Aapki team ki seats already book hain' : `${m.type} me maximum ${sz} seat le sakte ho`);
+  const team = mine.length ? mine[0].slot : seats[0].slot;
+  const usedPos = new Set();
+  for (const s of seats) {
+    if (!s.ign) fail('In-game name required');
+    if (s.slot < 1 || s.slot > m.slots || s.pos < 0 || s.pos >= sz) fail('Pehle slot choose karo');
+    if (s.slot !== team) fail('Saari seats ek hi team ki honi chahiye');
+    if (usedPos.has(s.pos)) fail('Ek hi seat do baar select hui hai');
+    usedPos.add(s.pos);
+    if (joined.some(j => j.slot === s.slot && j.pos === s.pos)) fail('Ye slot abhi kisi ne le liya, dusra chuno');
+  }
+  if (joined.length + seats.length > m.slots * sz) fail('Joining full');
+  const unit = num(m.fee), fee = unit * seats.length;
   if (total(u) < fee) fail('Insufficient balance. Recharge karo.');
   let rem = fee;
-  for (const w of ['dep', 'bonus', 'win']) { const t = Math.min(u[w], rem); if (t > 0) { u[w] -= t; rem -= t; tx(u, 'debit', w, t, 'Joined ' + m.title); } }
-  db.joins.push({ id: uid(), matchId: m.id, uid: u.id, ign, slot, pos, at: Date.now() });
-  if (!u.ign) u.ign = ign;
-  u.matches++;
-  if (joined.length + 1 >= m.slots * sz && !m.fullNotified) { // match full: admin ko alert
+  for (const w of ['dep', 'bonus', 'win']) { const t = Math.min(u[w], rem); if (t > 0) { u[w] -= t; rem -= t; tx(u, 'debit', w, t, 'Joined ' + m.title + (seats.length > 1 ? ` (${seats.length} seats)` : '')); } }
+  seats.forEach(s => db.joins.push({ id: uid(), matchId: m.id, uid: u.id, ign: s.ign, slot: s.slot, pos: s.pos, at: Date.now() }));
+  if (!u.ign) u.ign = seats[0].ign;
+  if (!mine.length) u.matches++;
+  if (joined.length + seats.length >= m.slots * sz && !m.fullNotified) { // match full: admin ko alert
     m.fullNotified = true;
     adminNotify('Match FULL ✅: ' + m.title, `${m.title} (${fT(m.time)}) full ho gaya (${m.slots * sz}/${m.slots * sz}). Room ID/password dene ke liye ready raho.`);
     log('Match full: ' + m.title);
   }
   // referral reward on first paid match
-  if (fee > 0 && fee >= num(db.settings.referralMinEntry) && u.referredBy && !u.refPaid) {
+  if (unit > 0 && unit >= num(db.settings.referralMinEntry) && u.referredBy && !u.refPaid) {
     const r = db.users[u.referredBy]; const rb = num(db.settings.referrerBonus);
     u.refPaid = true;
     if (r && rb > 0) { r.bonus += rb; tx(r, 'credit', 'bonus', rb, 'Referral reward: ' + u.username); }
@@ -279,11 +289,18 @@ app.post('/api/join', wrap(async (req, res) => {
 app.post('/api/change-slot', wrap(async (req, res) => {
   const u = user(req); const m = db.matches.find(x => x.id === req.body.matchId);
   if (!m || m.status !== 'upcoming') fail('Match not available');
-  const me = db.joins.find(j => j.matchId === m.id && j.uid === u.id); if (!me) fail('Pehle join karo');
+  const mine = db.joins.filter(j => j.matchId === m.id && j.uid === u.id); if (!mine.length) fail('Pehle join karo');
   const sz = sizeOf(m), slot = Math.floor(num(req.body.slot)), pos = Math.floor(num(req.body.pos));
-  if (slot < 1 || slot > m.slots || pos < 0 || pos >= sz) fail('Slot choose karo');
-  if (db.joins.some(j => j.matchId === m.id && j.slot === slot && j.pos === pos)) fail('Slot already booked');
-  me.slot = slot; me.pos = pos; await save(); res.json({ ok: true });
+  if (mine.length > 1) { // multi-seat: poori team ek saath nayi team me jaati hai (A,B.. wahi rehte hain)
+    if (slot < 1 || slot > m.slots) fail('Slot choose karo');
+    if (mine.some(me => db.joins.some(j => j.matchId === m.id && j.slot === slot && j.pos === me.pos && !mine.includes(j)))) fail('Slot already booked');
+    mine.forEach(me => { me.slot = slot; });
+  } else {
+    if (slot < 1 || slot > m.slots || pos < 0 || pos >= sz) fail('Slot choose karo');
+    if (db.joins.some(j => j.matchId === m.id && j.slot === slot && j.pos === pos)) fail('Slot already booked');
+    mine[0].slot = slot; mine[0].pos = pos;
+  }
+  await save(); res.json({ ok: true });
 }));
 app.get('/api/my-matches', wrap(async (req, res) => {
   const u = user(req);
@@ -512,8 +529,9 @@ app.post('/api/admin/match/:id/status', wrap(async (req, res) => {
 // Cancel + har joined user ko exact entry fee wapas (caller save() karega)
 function cancelAndRefund(m, msg) {
   const fee = num(m.fee), js = db.joins.filter(j => j.matchId === m.id);
-  js.forEach(j => { const u = db.users[j.uid]; if (u) { if (fee > 0) { u.dep += fee; tx(u, 'credit', 'dep', fee, 'Refund: ' + m.title); } u.matches = Math.max(0, u.matches - 1); } });
-  notify(js.map(j => j.uid), 'Match cancelled: ' + m.title, msg || 'Entry fee has been refunded.');
+  const seen = new Set(); // ek user ki kai seats ho sakti hain: har seat ki fee refund, matches count ek hi baar kam
+  js.forEach(j => { const u = db.users[j.uid]; if (u) { if (fee > 0) { u.dep += fee; tx(u, 'credit', 'dep', fee, 'Refund: ' + m.title); } if (!seen.has(j.uid)) { seen.add(j.uid); u.matches = Math.max(0, u.matches - 1); } } });
+  notify([...new Set(js.map(j => j.uid))], 'Match cancelled: ' + m.title, msg || 'Entry fee has been refunded.');
   db.joins = db.joins.filter(j => j.matchId !== m.id);
   m.status = 'cancelled'; m.cancelledAt = Date.now();
   return js.length;
@@ -564,12 +582,12 @@ app.post('/api/admin/match/:id/result', wrap(async (req, res) => {
     if (seen.has(u.id)) fail('Duplicate player in results: ' + u.username);
     seen.add(u.id);
     if (num(r.kills) < 0 || num(r.rank) < 0 || num(r.prize) < 0) fail('Negative values not allowed');
-    if (num(r.prize) > maxRP) fail('Rank prize for ' + u.username + ' exceeds the prizes configured on this match');
+    if (num(r.prize) > maxRP * db.joins.filter(x => x.matchId === m.id && x.uid === u.id).length) fail('Rank prize for ' + u.username + ' exceeds the prizes configured on this match');
   });
   m.result = [];
   rows.forEach(r => {
     const u = db.users[r.uid]; if (!u) return;
-    const j = db.joins.find(x => x.matchId === m.id && x.uid === u.id) || {};
+    const js = db.joins.filter(x => x.matchId === m.id && x.uid === u.id), j = { ...(js[0] || {}), ign: js.map(x => x.ign).join(' + ') };
     const kills = Math.floor(num(r.kills)), rank = Math.floor(num(r.rank)), rp = num(r.prize), kp = kills * num(m.perKill), amt = rp + kp;
     u.kills += kills;
     if (amt > 0) { u.win += amt; u.earning += amt; tx(u, 'prize', 'win', amt, 'Winning: ' + m.title); }
@@ -756,13 +774,15 @@ app.post('/api/admin/match/:id/message', wrap(async (req, res) => {
   notify(to, String(req.body.title || m.title), body); await save(); res.json({ ok: true, sent: to.length });
 }));
 app.post('/api/admin/match/:id/kick', wrap(async (req, res) => {
-  admin(req); const m = MM(req); const j = joinsOf(m).find(x => x.uid === req.body.uid); if (!j) fail('Player not found');
+  admin(req); const m = MM(req); const b = req.body; // multi-seat user: slot+pos se wahi seat chuno
+  const j = joinsOf(m).find(x => x.uid === b.uid && (b.slot === undefined || (x.slot === +b.slot && x.pos === +b.pos))); if (!j) fail('Player not found');
   const u = db.users[j.uid];
-  if (u) { u.dep += num(m.fee); u.matches = Math.max(0, u.matches - 1); tx(u, 'credit', 'dep', num(m.fee), 'Refund (removed): ' + m.title); notify([u.id], 'Removed from match', m.title + ' se aapko hata diya gaya. Fee refund ho gayi.'); }
+  if (u) { u.dep += num(m.fee); if (joinsOf(m).filter(x => x.uid === j.uid).length <= 1) u.matches = Math.max(0, u.matches - 1); tx(u, 'credit', 'dep', num(m.fee), 'Refund (removed): ' + m.title); notify([u.id], 'Removed from match', m.title + ' se aapko hata diya gaya. Fee refund ho gayi.'); }
   db.joins = db.joins.filter(x => x !== j); m.fullNotified = false; log('Kick ' + (u && u.username) + ' from ' + m.title); await save(); res.json({ ok: true });
 }));
 app.post('/api/admin/match/:id/move', wrap(async (req, res) => {
-  admin(req); const m = MM(req); const j = joinsOf(m).find(x => x.uid === req.body.uid); if (!j) fail('Player not found');
+  admin(req); const m = MM(req); const b = req.body; // fromSlot/fromPos: multi-seat user ki kaunsi seat move karni hai
+  const j = joinsOf(m).find(x => x.uid === b.uid && (b.fromSlot === undefined || (x.slot === +b.fromSlot && x.pos === +b.fromPos))); if (!j) fail('Player not found');
   const sz = sizeOf(m), slot = Math.floor(num(req.body.slot)), pos = Math.floor(num(req.body.pos));
   if (slot < 1 || slot > m.slots || pos < 0 || pos >= sz) fail('Slot galat hai');
   if (joinsOf(m).some(x => x !== j && x.slot === slot && x.pos === pos)) fail('Slot already booked');
