@@ -8,13 +8,14 @@ const { Redis } = require('@upstash/redis');
 // ====== ENV (Render me set karo) ======
 // UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 // JWT_SECRET, ADMIN_USER, ADMIN_PASS
-// ZAPUPI_TOKEN, ZAPUPI_SECRET, BASE_URL (e.g. https://yourapp.onrender.com)
-// ZAPUPI_API (optional, default below) - Zapupi docs se verify karo
+// ZAPUPI_KEY (your zap_key), BASE_URL (e.g. https://yourapp.onrender.com, no trailing slash)
+// ZAPUPI_WEBHOOK_TOKEN (random secret appended to the webhook URL as ?t=...)
+// ZAPUPI_API (optional, default https://pay.zapupi.com/api), ALLOW_ZAPUPI_TEST=1 (only to accept test-mode payments in production)
 const crypto = require('crypto');
 const IS_PROD = !!process.env.RENDER || process.env.NODE_ENV === 'production';
 const {
-  ADMIN_USER = 'admin', ADMIN_PASS = '', ZAPUPI_TOKEN, ZAPUPI_SECRET, BASE_URL = '',
-  ZAPUPI_API = 'https://api.zapupi.com/api', PORT = 3000, ALLOW_MEMORY_DB, ALLOW_REDIS_IMAGES,
+  ADMIN_USER = 'admin', ADMIN_PASS = '', ZAPUPI_KEY, ZAPUPI_WEBHOOK_TOKEN = '', BASE_URL = '',
+  ZAPUPI_API = 'https://pay.zapupi.com/api', ALLOW_ZAPUPI_TEST, PORT = 3000, ALLOW_MEMORY_DB, ALLOW_REDIS_IMAGES,
   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
 } = process.env;
 let JWT_SECRET = process.env.JWT_SECRET;
@@ -24,6 +25,10 @@ if (!JWT_SECRET || JWT_SECRET === 'change-me') {
 }
 const ADMIN_ENABLED = ADMIN_PASS.length >= 8 && ADMIN_PASS !== 'admin123';
 if (!ADMIN_ENABLED) console.warn('!!! ADMIN_PASS missing/weak (min 8 chars, not admin123): admin login is DISABLED !!!');
+
+const SITE = BASE_URL.replace(/\/+$/, '');
+if (!ZAPUPI_KEY) console.warn('!!! ZAPUPI_KEY missing: deposits are DISABLED !!!');
+else if (!ZAPUPI_WEBHOOK_TOKEN) console.warn('!!! ZAPUPI_WEBHOOK_TOKEN not set: webhook URL has no secret. Payments are still verified server-to-server, but set a token anyway. !!!');
 
 const redis = process.env.UPSTASH_REDIS_REST_URL
   ? new Redis({ url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN })
@@ -101,7 +106,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(['/api/login', '/api/signup', '/api/admin/login'], rl(10, 15 * 60e3));
 app.use(['/api/deposit', '/api/withdraw', '/api/promo', '/api/daily', '/api/join', '/api/change-slot', '/api/password', '/api/ticket', '/api/admin/upload'], rl(30, 60e3));
 app.use('/api', (req, res, next) => {
-  if (db && db.settings.maintenance && !req.path.startsWith('/admin') && req.path !== '/settings' && req.path !== '/zapupi/webhook') return res.status(503).json({ error: db.settings.maintenanceMsg });
+  if (db && db.settings.maintenance && !req.path.startsWith('/admin') && req.path !== '/settings' && req.path !== '/webhook') return res.status(503).json({ error: db.settings.maintenanceMsg });
   next();
 });
 const wrap = fn => (req, res) =>
@@ -242,41 +247,69 @@ function bonusFor(amount) {
   const t = db.settings.depositBonus.filter(x => amount >= x.dep).sort((a, b) => b.dep - a.dep)[0];
   return t ? num(t.bonus) : 0;
 }
+// ZapUPI call (JSON body, zap_key always added server-side, never sent to the browser)
+async function zapPost(endpoint, body) {
+  let r;
+  try {
+    r = await fetch(`${ZAPUPI_API}/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ zap_key: ZAPUPI_KEY, ...body }), signal: AbortSignal.timeout(15000) });
+  } catch (e) { fail('Payment gateway unreachable, try again', 502); }
+  const j = await r.json().catch(() => null);
+  if (!j || typeof j !== 'object') fail('Payment gateway returned an invalid reply', 502);
+  return j;
+}
 app.post('/api/deposit', wrap(async (req, res) => {
   const u = user(req);
   const amount = Math.floor(num(req.body.amount));
   if (amount < db.settings.minDeposit || amount > db.settings.maxDeposit) fail(`Amount ${db.settings.minDeposit}-${db.settings.maxDeposit}`);
-  if (!ZAPUPI_TOKEN || !ZAPUPI_SECRET) fail('Payment gateway not configured', 500);
-  const orderId = String(Math.floor(1e5 + Math.random() * 9e5)) + Date.now().toString().slice(-4);
-  // NOTE: Zapupi ke latest docs se field names verify karo
-  const body = new URLSearchParams({
-    token_key: ZAPUPI_TOKEN, secret_key: ZAPUPI_SECRET, amount: String(amount),
-    order_id: orderId, custom_mobile: '9999999999', redirect_url: `${BASE_URL}/?paid=${orderId}`,
-    remark: u.id
-  });
-  const r = await fetch(`${ZAPUPI_API}/create-order`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
-  const j = await r.json().catch(() => ({}));
-  const url = j.payment_url || j.data?.payment_url || j.url;
-  if (!url) fail('Gateway error: ' + (j.message || 'try again'), 502);
-  db.deposits.push({ id: orderId, uid: u.id, amount, status: 'pending', at: Date.now() });
+  if (!ZAPUPI_KEY) fail('Payment gateway not configured', 503);
+  const orderId = 'ORD' + Date.now() + crypto.randomBytes(3).toString('hex'); // unique per payment
+  // Save the pending order FIRST, so a webhook can never arrive for an order we don't know about
+  const d = { id: orderId, uid: u.id, amount, status: 'pending', at: Date.now() };
+  db.deposits.push(d);
   await save();
+  const payload = { order_id: orderId, amount: String(amount), remark: u.id };
+  if (SITE) {
+    payload.success_url = payload.failed_url = payload.timeout_url = SITE + '/';
+    if (ZAPUPI_WEBHOOK_TOKEN) payload.webhook_url = `${SITE}/api/webhook?t=${encodeURIComponent(ZAPUPI_WEBHOOK_TOKEN)}`;
+  }
+  let j;
+  try { j = await zapPost('create-order', payload); }
+  catch (e) { d.status = 'failed'; await save().catch(() => {}); throw e; }
+  const url = String(j.payment_url || (j.data && j.data.payment_url) || '');
+  if (String(j.status).toLowerCase() !== 'success' || !/^https:\/\//i.test(url)) {
+    console.error('ZapUPI create-order rejected:', JSON.stringify(j).slice(0, 300));
+    d.status = 'failed'; await save();
+    fail('Gateway error: ' + String(j.message || 'try again').slice(0, 100), 502);
+  }
   res.json({ orderId, url });
 }));
 
+// Confirms the payment with ZapUPI (never trusts the webhook body), then credits the wallet exactly once.
+// Runs inside the global lock (wrap / lock), so two concurrent calls can't double-credit.
 async function settleDeposit(d) {
-  if (d.status !== 'pending' || !ZAPUPI_TOKEN || !ZAPUPI_SECRET) return d;
-  const r = await fetch(`${ZAPUPI_API}/order-status`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ token_key: ZAPUPI_TOKEN, secret_key: ZAPUPI_SECRET, order_id: d.id }) });
-  const j = await r.json().catch(() => ({}));
-  const st = String(j.status || j.data?.status || '').toLowerCase();
-  const ok = ['success', 'completed', 'paid', 'approved'].includes(st);
-  if (ok) {
+  if (!ZAPUPI_KEY || !['pending', 'failed'].includes(d.status)) return d; // approved / under review = final
+  const j = await zapPost('order-status', { order_id: d.id });
+  const o = j.data;
+  if (!o || typeof o !== 'object') return d; // unknown order / gateway error: leave as is
+  if (o.order_id !== undefined && String(o.order_id) !== d.id) return d;
+  const st = String(o.status || '').toLowerCase();
+  if (st === 'success') {
+    const txn = String(o.txn_id || '').slice(0, 100), env = String(o.environment || '').toLowerCase();
+    if ((env === 'test' || /^DUMMY/i.test(txn)) && IS_PROD && ALLOW_ZAPUPI_TEST !== '1') { console.warn('Ignoring TEST-mode payment for', d.id); return d; }
+    const gAmt = Number(o.amount), gPaid = o.pay_amount === undefined ? gAmt : Number(o.pay_amount);
     const u = db.users[d.uid];
+    const dupTxn = txn && db.deposits.some(x => x !== d && x.status === 'approved' && x.txnId === txn);
+    if (!u || !isFinite(gAmt) || !isFinite(gPaid) || Math.abs(gAmt - d.amount) > 0.001 || gPaid + 0.001 < d.amount || dupTxn) {
+      d.status = 'review'; d.note = `Gateway said ${o.amount}/${o.pay_amount}, expected ${d.amount}${dupTxn ? ' (duplicate txn)' : ''}`;
+      console.error('Deposit needs manual review:', d.id, d.note); log('Deposit flagged for review ' + d.id);
+      await save(); return d;
+    }
     u.dep += d.amount; tx(u, 'credit', 'dep', d.amount, 'Deposit of orderId: ' + d.id);
     const b = bonusFor(d.amount);
     if (b > 0) { u.bonus += b; tx(u, 'credit', 'bonus', b, 'Deposit bonus'); }
-    d.status = 'approved';
+    d.status = 'approved'; d.txnId = txn; d.utr = String(o.utr || '').slice(0, 40); d.paidAt = Date.now();
     await save();
-  } else if (['failed', 'cancelled', 'expired'].includes(st)) { d.status = 'failed'; await save(); }
+  } else if (st === 'failed' && d.status === 'pending') { d.status = 'failed'; await save(); }
   return d;
 }
 app.get('/api/deposit/check/:id', wrap(async (req, res) => {
@@ -286,13 +319,25 @@ app.get('/api/deposit/check/:id', wrap(async (req, res) => {
   await settleDeposit(d);
   res.json({ status: d.status, user: pub(u) });
 }));
-// Zapupi webhook: sirf order_id lete hain, asli verification status API se hota hai
-app.all('/api/zapupi/webhook', wrap(async (req, res) => {
-  const id = req.body.order_id || req.query.order_id;
-  const d = db.deposits.find(x => x.id === String(id));
-  if (d) await settleDeposit(d);
-  res.json({ ok: true });
-}));
+
+// ZapUPI webhook. The body is only used to learn WHICH order changed; the real status/amount come from the
+// server-to-server order-status call above. ?t=<ZAPUPI_WEBHOOK_TOKEN> keeps random callers out.
+const safeEq = (a, b) => crypto.timingSafeEqual(crypto.createHash('sha256').update(String(a)).digest(), crypto.createHash('sha256').update(String(b)).digest());
+app.post('/api/webhook', (req, res) => {
+  if (ZAPUPI_WEBHOOK_TOKEN && !safeEq(req.query.t || '', ZAPUPI_WEBHOOK_TOKEN)) return res.status(401).json({ error: 'unauthorized' });
+  const id = String((req.body && req.body.order_id) || '').trim().slice(0, 60);
+  if (!id) return res.json({ status: 'ok' });
+  lock(async () => {
+    try {
+      const d = db.deposits.find(x => x.id === id);
+      if (d) await settleDeposit(d);
+      res.json({ status: 'ok' }); // unknown orders also get 200 so ZapUPI stops retrying
+    } catch (e) {
+      console.error('Webhook failed for', id, e.message);
+      if (!res.headersSent) res.status(503).json({ status: 'retry' }); // transient (gateway/DB down): ask ZapUPI to retry
+    }
+  });
+});
 
 // ====== WITHDRAW ======
 app.post('/api/withdraw', wrap(async (req, res) => {
