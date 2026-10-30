@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.wolfclash.app",
+        "sha256_cert_fingerprints": ["D6:27:51:56:53:56:DE:FF:8D:12:41:BC:76:1C:A2:BB:2F:7E:7C:E8:94:25:DC:E3:28:BF:98:AC:05:98:30:86"]
+      }
+    }]
