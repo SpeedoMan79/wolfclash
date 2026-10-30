@@ -2,12 +2,12 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#050a18">
+<meta name="theme-color" content="#062B52">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Arena Battle</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#070d1f;--s1:#101a33;--s2:#16223f;--s3:#1d2b50;--line:#ffffff14;--tx:#e8eeff;--mu:#8fa0c8;
 --ac:#6a5cff;--ac2:#00d2ff;--gold:#ffc233;--g:#2ee59d;--r:#ff4d6d;--grad:linear-gradient(135deg,#6a5cff,#00b8ff)}
@@ -205,7 +205,86 @@ nav div:nth-child(3){flex:0 0 66px;height:66px;width:66px;margin:-34px 6px 0;bor
 .empty b{display:flex;justify-content:center;color:var(--ac);opacity:.9}.empty b svg{width:46px;height:46px}.maint b{display:flex;color:var(--ac)}.maint b svg{width:64px;height:64px}
 @media(max-width:360px){.trio{grid-template-columns:1.2fr .85fr .85fr}.bv{font-size:23px}}
 
-</style></head><body>
+</style><style id="v7">
+/* ===== WolfClash UI v7: navy + blue header, white cards, gold coins ===== */
+:root{--bg:#0A1B36;--s1:#10264A;--s2:#173159;--s3:#223F6E;--line:#ffffff1c;--tx:#fff;--mu:#9FB0D4;--ac:#1E88E5;--ac2:#7CC4FF;--gold:#F5B800;--g:#4ADE80;--r:#F87171;
+--grad:linear-gradient(135deg,#2563EB,#1E88E5);--glow:0 8px 22px #2563eb55;--hd:linear-gradient(180deg,#0C5C96,#062B52);--ink:#14213D}
+*{font-family:'Lexend','Outfit',system-ui,sans-serif!important}
+html{background:#050D1C}
+body{background:radial-gradient(500px 260px at 100% 0,#2563eb2e,transparent 70%),linear-gradient(180deg,#0A1E3C,#091630 55%,#161341);padding-bottom:96px}
+body:has(#app[data-k=menu]){background:#F2F4F7;color:var(--ink)}
+body:has(.auth){background:#fff;color:#111}
+/* headers */
+header,.hd{color:#fff;background:var(--hd)!important;border:0!important;border-radius:0 0 28px 28px;box-shadow:0 10px 30px #0006;padding:18px 16px 22px;margin-bottom:12px;backdrop-filter:none}
+header h1{text-align:center;font-size:22px;font-weight:600}header .back+h1{margin-right:44px}
+header .back{background:none;border:0;width:40px;height:40px}header .back svg{width:28px;height:28px}
+.hd{padding:20px 16px 18px;position:static}
+.hd .avt{width:52px;height:52px;border-radius:50%;font-size:20px;border:2px solid #ffffff59}
+.hello b{font-size:22px;font-weight:600}.lvl{background:none;box-shadow:none;border:1px solid #ffffff66;color:#fff;font-size:11px;padding:1px 10px;margin-top:2px}
+.pill{background:none!important;border:1px solid #ffffff66!important;padding:3px 14px 3px 3px;font-weight:500;gap:8px}
+.coin{width:28px;height:28px;font-size:14px;border:2px solid #FFD04D;background:radial-gradient(circle at 30% 30%,#FFE9A0,#F5B800);color:#7A4A00}
+.bell{width:44px;height:44px;border-radius:50%;background:#fff;color:#2563EB;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}.bell svg{width:22px;height:22px}
+.ann{display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:#2A3A55;margin-bottom:14px}
+.ann i{width:58px;display:grid;place-items:center;background:#46556D;color:#fff}.ann i svg{width:30px;height:30px}.ann span{padding:10px 12px;font-size:14px;line-height:1.4;color:#E4EAF6}
+/* slider */
+.sli{border:2px solid #38D5E8;border-radius:14px;box-shadow:none;flex-basis:94%}
+.sli.d1,.sli.d2,.sli.d3{background:radial-gradient(circle at 80% 30%,#C21B2E,#4A0612 70%)}.sli h3{color:#FFD84D}.dots i.on{background:#fff}
+/* my contests tiles */
+.h2{font-size:24px;font-weight:700;justify-content:center;text-align:center}
+.mm div{background:#fff!important;border:0!important;border-radius:16px!important;color:var(--ink);font-size:15px;font-weight:500;padding:14px 4px}
+.mm div span{width:58px!important;height:58px!important;border-radius:12px!important;color:#fff!important;background:#34D399!important;margin-bottom:8px}
+.mm div:nth-child(2) span{background:#22D3EE!important}.mm div:nth-child(3) span{background:#22C55E!important}.mm div small{display:none}
+.sec b{font-size:20px;letter-spacing:.5px}.sec b:before,.sec b:after{display:none}
+.game{border:1.5px solid #38D5E8;border-radius:12px}.game .im{height:150px}.gn{font-size:16px}
+.cnt{top:10px;bottom:auto;right:10px;background:#0009;border-color:#3DDC84aa;color:#3DDC84}
+/* nav */
+nav{left:50%!important;bottom:0!important;width:100%!important;max-width:520px!important;border:0!important;border-radius:24px 24px 0 0!important;background:#0A2145!important;padding:8px 6px calc(10px + env(safe-area-inset-bottom))!important;box-shadow:0 -8px 24px #0006!important}
+nav div{color:#B6C3E0!important;font-size:12px!important;position:relative!important}
+nav div.on{color:#fff!important}nav div.on svg{stroke:#fff!important}
+nav div.on:after{content:"";position:absolute;bottom:-2px;left:22%;right:22%;height:3px;border-radius:3px;background:var(--gold)}
+nav div:nth-child(3){flex:1!important;width:auto!important;height:auto!important;margin:0!important;border:0!important;border-radius:16px!important;background:none!important;box-shadow:none!important;top:auto!important;color:#B6C3E0!important}
+nav div:nth-child(3).on{color:#fff!important}nav div:nth-child(3) svg,nav div.on:nth-child(3) svg{stroke:currentColor!important;width:22px!important;height:22px!important}
+nav div:nth-child(3):after{content:"Home";font-size:12px}nav div:nth-child(3).on:after{content:"Home";position:static;height:auto;background:none;color:#fff}
+/* buttons, inputs */
+button{background:#2563EB;color:#fff;border-radius:12px;box-shadow:none;font-weight:600}button.g{background:#22C55E;color:#fff;box-shadow:none}button.r{background:#EF4444;color:#fff}button.o{background:#1E3A6B;color:#fff}
+input,select,textarea{background:#173159;border-radius:12px}
+.tabs{padding:4px 16px 0;gap:4px}.tabs div{background:#1E2339;border-radius:12px;font-size:15px;color:#fff;padding:14px 8px}.tabs div.on{background:#4361EE;color:#fff}
+.card{background:var(--s1);border-radius:16px}
+/* contest card */
+.card.m{background:#fff;color:var(--ink);border:0;border-left:0;overflow:hidden}.card.m .im{height:180px;border-radius:0}.card.m .pz{display:none}
+.card.m .tag{background:#000a;color:#fff}.card.m h3,.card.m .bd{color:var(--ink)}.card.m small{color:#44506E}
+.g3 div{background:none;color:#44506E;font-size:11px;padding:4px}.g3 b{color:var(--ink)!important;font-size:19px;display:flex;justify-content:center;align-items:center;gap:6px}.g3.b b{font-size:16px;display:block}
+.card.m .ty{color:#06121a}.bar{background:#E3E8F2;height:6px}.bar i{background:#22C55E!important}.bar i.fl{background:#D32F2F!important}
+.card.m .foot span{color:#44506E;font-size:13px}.card.m .room{background:#EEF2FF;border-color:#2563EB;color:var(--ink)}.card.m .fee{background:#F1F4FA;color:#44506E}
+.card.m button{padding:13px 24px;font-size:16px}
+/* wallet */
+.bal{background:linear-gradient(135deg,#243C9C,#16275F 55%,#0F1A40);color:#fff;box-shadow:0 12px 30px #0006;border-radius:20px}.bal .sp div{background:#ffffff14}
+.tx{background:#1F2D45;border-color:#2C3B58}
+#app[data-k=recharge] .card,#app[data-k=withdraw] .card{background:#fff;color:var(--ink)}
+#app[data-k=recharge] label,#app[data-k=withdraw] label{color:var(--ink);font-size:18px;font-weight:500;margin-top:8px;display:block}
+#app[data-k=recharge] input,#app[data-k=withdraw] input,#app[data-k=withdraw] select{background:none;border:0;border-bottom:3px solid #E6E8EE;border-radius:0;color:var(--ink);font-size:22px;padding:10px 4px}
+#app[data-k=recharge] input:focus,#app[data-k=withdraw] input:focus{box-shadow:none;border-color:#2563EB}
+.chips{gap:12px}.chips div{background:#DBEAFE;border:0;color:var(--ink);font-size:18px;font-weight:500;padding:16px 4px}
+.hist{background:#fff;color:var(--ink);padding:10px;border:0}.hist div{background:#F6F5F3;border-radius:10px;padding:12px 14px;margin-bottom:6px;border:0}.hist span{color:var(--ink)}
+.st.approved,.st.paid{background:none;color:#15803D}.st.pending,.st.open{background:none;color:#B45309}.st.rejected,.st.failed,.st.closed{background:none;color:#C62828}
+/* leaderboard */
+.rank{background:#1E2339;border:0;border-radius:14px}.pod>div{background:#1E2339;border:0}.pod .p1{background:linear-gradient(180deg,#2B3A8C,#1E2339)}
+/* menu (light) */
+#app[data-k=menu] .li{background:#fff;color:#2B3A5C;border:0;box-shadow:0 2px 10px #14213d0f;font-size:17px;padding:16px}
+#app[data-k=menu] .li .ic{background:none!important;color:#1E88E5}#app[data-k=menu] .li .ic svg{width:26px;height:26px;stroke-width:2.2}
+#app[data-k=menu] .pf h2{color:#1E88E5;font-size:28px;font-weight:600}.pf .big .avt{border:6px solid #1F2937;box-shadow:0 0 0 6px #FACC15 inset}
+#app[data-k=menu] .stats3 div{background:#fff;border:0;color:#6B7A99;box-shadow:0 2px 10px #14213d0f}#app[data-k=menu] .stats3 b{color:#1E7BE0;font-size:26px}
+/* refer */
+.ref{background:#4A00B8;border:0}.code{background:#8A00FF;border:3px dashed #fff}.sh button{border-radius:99px!important;border:0!important;color:#fff!important}
+/* auth */
+.auth{background:#fff!important;color:#111;padding:70px 26px 40px;justify-content:flex-start}
+.auth .logo{margin:0 0 18px;width:64px;height:64px;border-radius:20px;background:#6200EE;color:#fff}
+.auth h1{text-align:left;font-size:40px;line-height:1.15;color:#6200EE;font-weight:700}.auth p.s{text-align:left;color:#555;margin:6px 0 34px}
+.fld input{height:62px;border-radius:99px;background:#fff;color:#1B1B2F;border:1px solid #ECECF2;box-shadow:0 6px 14px #14143c17;font-size:18px;padding-left:50px}.fld svg{color:#8A8CA5}
+.auth>button{height:62px;border-radius:99px;background:#6200EE;font-size:22px;font-weight:400;box-shadow:0 8px 18px #6200ee4d;margin-top:18px}.auth a{color:#6200EE}
+.auth p[style]{color:#111!important;font-size:16px!important}
+</style>
+</head><body>
 <div id="app"></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -336,8 +415,9 @@ async home(a){
   const lvl=1+Math.floor((st.matches||0)/5);
   const DS=[['Instant Withdrawal','Jeeto aur paisa seedha apne account me','d1',"go('withdraw')"],['Refer & Earn','Dost ko invite karo, bonus kamao','d2',"tab('earn')"],['Daily Tournaments','Roz naye contests, bade prizes','d3',"document.getElementById('gm').scrollIntoView({behavior:'smooth'})"]];
   const sl=(S.banners&&S.banners.length)?S.banners.map(b=>`<div class="sli" style="background-image:url('${esc(b.img)}')" ${b.link?`onclick="window.open('${esc(b.link)}','_blank')"`:''}></div>`):DS.map(d=>`<div class="sli ${d[2]}" onclick="${d[3]}"><div><h3>${d[0]}</h3><p>${d[1]}</p></div><span class="sic">${ico('trophy')}</span></div>`);
-  a.innerHTML=`<div class="hd"><div class="ibtn" onclick="tab('menu')">${ico('menu')}</div><div class="hello"><small>Welcome,</small><b>${esc(st.username)}</b><span class="lvl">Level ${lvl}</span></div><div class="pill" style="border-color:#ff7a1a66" onclick="tab('wallet')">${coin()}${rs(st.total)}</div></div>
+  a.innerHTML=`<div class="hd" onclick="">${avh(st.avatar,st.username)}<div class="hello" onclick="tab('menu')"><b>${esc(st.username)}</b><span class="lvl">Level ${lvl}</span></div><div class="pill" onclick="tab('wallet')">${coin()}${rs(st.total)}</div><div class="bell" onclick="tab('notif')">${ico('bell')}</div></div>
   <div class="wrap" style="padding-top:6px">
+  ${S.announcement?`<div class="ann"><i>${ico('mega')}</i><span>${esc(S.announcement)}</span></div>`:''}
   <div class="sld" id="sl"><div class="trk">${sl.join('')}</div></div><div class="dots" id="dts">${sl.map((_,i)=>`<i class="${i?'':'on'}"></i>`).join('')}</div>
   <div class="h2">My Contests</div>
   <div class="mm"><div onclick="go('my',{s:'ongoing'})"><span>${ico('play')}</span>Ongoing<small>Live</small></div><div onclick="go('my',{s:'upcoming'})"><span>${ico('cal')}</span>Upcoming<small>Soon</small></div><div onclick="go('my',{s:'resulted'})"><span>${ico('check')}</span>Result<small>Done</small></div></div>
@@ -445,10 +525,10 @@ function mcard(x,i){
   const cap=x.capacity,full=x.filled>=cap,pct=Math.round(x.filled/cap*100),C={Solo:'#22e4ff',Duo:'#ffc83d',Squad:'#ff5b2e'}[x.type]||'#22e4ff';
   return `<div class="card m"><div class="im" onclick="detail(${i})" style="${x.image?`background-image:linear-gradient(#0000 30%,#000c),url('${esc(x.image)}')`:''}"><span class="pz">₹${x.prize}<small>PRIZE POOL</small></span><span class="tag">${x.status=='upcoming'?'<span data-cd="'+x.time+'"></span>':x.status=='ongoing'?'LIVE':x.status}</span>${esc(x.title.slice(0,30))}</div>
   <div class="bd"><div><span class="ty" style="--c:${C}">${esc(x.type)}</span><small>${fmtT(x.time)} • #${x.id.slice(0,6)}</small></div>
-  <div class="g3"><div>ENTRY<b>₹${x.fee}</b></div><div>PER KILL<b>₹${x.perKill}</b></div><div>MAP<b>${esc(x.map||'-')}</b></div></div>
+  <div class="g3"><div>PRIZE POOL<b>${coin()}${x.prize}</b></div><div>PER KILL<b>${coin()}${x.perKill}</b></div><div>ENTRY FEE<b>${coin()}${x.fee}</b></div></div><div class="g3 b"><div>TYPE<b>${esc(x.type)}</b></div><div>SLOTS<b>${x.filled}/${cap}</b></div><div>MAP<b>${esc(x.map||'-')}</b></div></div>
   ${x.room?`<div class="room"><span>Room ID: <b>${esc(x.room.id||'Soon')}</b></span><span>Pass: <b>${esc(x.room.pass||'Soon')}</b></span><span onclick="copyT('${esc(x.room.id)}')" style="cursor:pointer">${ico('copy')}</span></div>`:''}
   ${x.result?`<div style="margin-top:8px">${x.result.map(r=>`<div class="rr"><b>${r.rank?'#'+r.rank:'-'}</b><span>${esc(r.ign||r.username)} <em>${r.kills} kills</em></span><b style="color:var(--g)">₹${r.prize}</b></div>`).join('')}</div>`:''}
-  ${x.status=='upcoming'?`<div class="bar"><i style="width:${pct}%"></i></div><div class="foot"><span>${x.mine?'Your slot: <b style="color:var(--ac2)">'+mineLbl(x)+'</b>':full?'Match full':`${x.filled}/${cap} joined`}</span>${x.joined?`${x.size>1&&x.mySeats.length<x.size&&x.seats.filter(z=>z.slot==x.mine.slot).length<x.size?`<button onclick="joinM(${i},2)">Add seat</button>`:''}<button class="o" onclick="joinM(${i},1)">Change slot</button>`:full?'<button disabled>Full</button>':`<button onclick="joinM(${i})">Join ₹${x.fee}</button>`}</div>`:x.mine?`<div class="foot"><span>Your slot: <b style="color:var(--ac2)">${mineLbl(x)}</b></span></div>`:''}</div></div>`}
+  ${x.status=='upcoming'?`<div class="bar"><i class="${full?'fl':''}" style="width:${pct}%"></i></div><div class="foot"><span>${x.mine?'Your slot: <b style="color:var(--ac2)">'+mineLbl(x)+'</b>':full?'Match full':`${x.filled}/${cap} joined`}</span>${x.joined?`${x.size>1&&x.mySeats.length<x.size&&x.seats.filter(z=>z.slot==x.mine.slot).length<x.size?`<button onclick="joinM(${i},2)">Add seat</button>`:''}<button class="o" onclick="joinM(${i},1)">Change slot</button>`:full?'<button disabled style="opacity:.6">Joining Full</button>':`<button onclick="joinM(${i})">Join ₹${x.fee}</button>`}</div>`:x.mine?`<div class="foot"><span>Your slot: <b style="color:var(--ac2)">${mineLbl(x)}</b></span></div>`:''}</div></div>`}
 function detail(i){const x=window._M[i];modal(`<h3>${esc(x.title)}</h3><p class="mu" style="text-align:left">${fmtT(x.time)} • ${esc(x.type)} • ${esc(x.map||'')}</p>${x.rankPrizes.length?`<div class="card"><b>Prize distribution</b>${x.splitPrize&&x.size>1?'<small style="color:var(--mu)"> (team me barabar split)</small>':''}${x.rankPrizes.map((p,k)=>`<div class="rr"><b>#${k+1}</b><span></span><b style="color:var(--g)">₹${p}</b></div>`).join('')}</div>`:''}<b style="font-size:13px">Slots</b>${seatGrid(x,0)}<div class="card" style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--mu)">${esc(S.rules)}</div><button class="o" onclick="closeM()">Close</button>`)}
 function joinM(i,ch){const x=window._M[i];SEL=null;window._JM=x;MODE=ch==1?'change':ch==2?'add':'join';ADDT=x.mine?x.mine.slot:0;
   const hint=MODE=='change'?(x.mySeats&&x.mySeats.length>1?'Nayi team ki koi bhi seat tap karo (poori team shift hogi)':'Nayi jagah tap karo'):x.size>1?'Team me apni jagah (A/B…) tap karo. 2 ya zyada seats bhi chun sakte ho.':'Apna slot number tap karo';
