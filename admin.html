@@ -160,7 +160,7 @@ async users(){
   const u=await api('/users');window._u=u;const q=(F.q||'').toLowerCase();
   const L=u.filter(x=>x.username.includes(q)).sort((a,b)=>b.createdAt-a.createdAt);
   shell('Users ('+u.length+')',`<div class="card"><input placeholder=" Search username…" value="${esc(F.q||'')}" oninput="F.q=this.value;clearTimeout(window._t);window._t=setTimeout(()=>{show().then(()=>{const i=document.querySelector('main input');i.focus();i.setSelectionRange(99,99)})},350)"></div>
-  <div class="card"><table><tr><th>User</th><th>Deposit</th><th>Win</th><th>Bonus</th><th>Matches</th><th>Kills</th><th>Joined</th><th></th></tr>${L.slice(0,200).map(x=>`<tr><td><b>${esc(x.username)}</b> ${x.banned?'<span class="st banned">banned</span>':''}</td><td>${x.dep}</td><td>${x.win}</td><td>${x.bonus}</td><td>${x.matches}</td><td>${x.kills}</td><td>${fT(x.createdAt)}</td><td style="white-space:nowrap"><button class="sm o" onclick="userDetail('${x.id}')">View</button> <button class="sm o" onclick="adj('${x.id}')">± Balance</button> <button class="sm ${x.banned?'g':'r'}" onclick="uact('${x.id}','${x.banned?'unban':'ban'}')">${x.banned?'Unban':'Ban'}</button></td></tr>`).join('')}</table></div>`,
+  <div class="card"><table><tr><th>User</th><th>Deposit</th><th>Win</th><th>Bonus</th><th>Matches</th><th>Kills</th><th>Joined</th><th></th></tr>${L.slice(0,200).map(x=>`<tr><td><b>${esc(x.username)}</b> ${x.banned?'<span class="st banned">banned</span>':''}</td><td>${x.dep}</td><td>${x.win}</td><td>${x.bonus}</td><td>${x.matches}</td><td>${x.kills}</td><td>${fT(x.createdAt)}</td><td style="white-space:nowrap"><button class="sm o" onclick="userDetail('${x.id}')">View</button> <button class="sm o" onclick="adj('${x.id}')">± Balance</button> <button class="sm o" onclick="notifyU('${x.id}')">🔔 Notify</button> <button class="sm ${x.banned?'g':'r'}" onclick="uact('${x.id}','${x.banned?'unban':'ban'}')">${x.banned?'Unban':'Ban'}</button></td></tr>`).join('')}</table></div>`,
   `<button class="o" onclick="csv('users.csv',[['username','deposit','win','bonus','matches','kills']].concat(_u.map(x=>[x.username,x.dep,x.win,x.bonus,x.matches,x.kills])))">⬇ Export CSV</button>`)},
 
 async wd(){
@@ -185,8 +185,8 @@ async tickets(){
   <div class="card"><table><tr><th>User</th><th>Subject</th><th>Last message</th><th>Time</th><th>Status</th><th></th></tr>${L.map(x=>`<tr><td>${esc(x.username)}</td><td><b>${esc(x.subject)}</b></td><td style="max-width:260px;color:var(--mu)">${esc(x.msgs[x.msgs.length-1].text.slice(0,70))}</td><td>${fT(x.at)}</td><td><span class="st ${x.status}">${x.status}</span></td><td><button class="sm" onclick="ticketUI('${x.id}')">Open</button></td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mu)">No tickets</td></tr>'}</table></div>`)},
 
 async notice(){
-  const n=await api('/notices');
-  shell('Notifications',`<div class="card"><h3>Send to all users</h3><label>Title</label><input id="nt"><label>Message</label><textarea id="nb"></textarea>${imgF('ni','Image (optional)','')}<button class="g" style="margin-top:10px" onclick="sendN()">Send</button></div>
+  const n=await api('/notices'),st=await api('/stats');
+  shell('Notifications',`<div class="card"><h3>Send to all users</h3><p style="color:var(--mu);font-size:12px;margin-bottom:8px">🔔 ${st.pushUsers} users ne phone notifications ON ki hain. Baaki ko app ke Updates me dikhega.</p><label>Title</label><input id="nt"><label>Message</label><textarea id="nb"></textarea>${imgF('ni','Image (optional)','')}<button class="g" style="margin-top:10px" onclick="sendN()">Send</button></div>
   <div class="card"><h3>Sent</h3>${n.map(x=>`<div class="log"><span><b>${esc(x.title)}</b><br><small>${esc(x.body)}</small></span><span style="text-align:right"><small>${fT(x.at)}</small><br><button class="sm r" onclick="delN('${x.id}')">Delete</button></span></div>`).join('')||'<p style="color:var(--mu)">None</p>'}</div>`)},
 
 async settings(){
@@ -263,6 +263,8 @@ async function userDetail(id){
   <h3 style="margin-top:14px">Recent transactions</h3><table>${d.txns.map(t=>`<tr><td>${fT(t.at)}</td><td>${esc(t.note)}</td><td style="color:${t.type=='debit'?'var(--r)':'var(--g)'}">${t.type=='debit'?'−':'+'}${t.amt}</td><td>${t.wallet}</td></tr>`).join('')||'<tr><td>None</td></tr>'}</table>
   <button class="o" style="margin-top:14px" onclick="closeM()">Close</button>`,760)}
 function adj(id){modal(`<h3>Adjust balance</h3><label>Wallet</label><select id="aw"><option value="dep">Deposit</option><option value="win">Winning</option><option value="bonus">Bonus</option></select><label>Action</label><select id="aa"><option value="add">Add (credit)</option><option value="deduct">Deduct (debit)</option></select><label>Amount</label><input id="am" type="number"><div style="margin-top:14px;display:flex;gap:8px"><button class="g" onclick="doAdj('${id}')">Apply</button><button class="o" onclick="closeM()">Cancel</button></div>`,400)}
+function notifyU(id){modal(`<h3>Send notification</h3><label>Title</label><input id="nut"><label>Message</label><textarea id="nub"></textarea><div style="margin-top:14px;display:flex;gap:8px"><button class="g" onclick="doNotifyU('${id}')">Send</button><button class="o" onclick="closeM()">Cancel</button></div>`,400)}
+function doNotifyU(id){run(async()=>{const r=await api('/user/'+id+'/notify',{title:$('#nut').value,body:$('#nub').value});closeM();toast(r.devices?'Sent ✓ (phone par bhi gaya)':'Saved ✓ (user ne phone notification ON nahi ki, app me dikhega)')})}
 function doAdj(id){run(async()=>{await api('/user/'+id,{action:$('#aa').value,wallet:$('#aw').value,amount:$('#am').value,reason:prompt('Reason for this adjustment (required, saved in ledger)')||''});closeM();show()},'Balance updated ✓')}
 function uact(id,a){run(async()=>{await api('/user/'+id,{action:a});show()},a+' done')}
 function resetPw(id){const p=prompt('New password (min 6 chars)');if(p)run(()=>api(`/user/${id}/password`,{password:p}),'Password reset ✓')}
@@ -274,7 +276,7 @@ function delPromo(c){if(confirm('Delete '+c+'?'))run(async()=>{await api('/promo
 function ticketUI(id){const t=_t.find(x=>x.id==id);modal(`<h3>${esc(t.subject)} <small style="color:var(--mu)">— ${esc(t.username)}</small></h3><div style="margin:14px 0;max-height:46vh;overflow:auto">${t.msgs.map(m=>`<div class="msg ${m.from}">${esc(m.text)}<br><small style="opacity:.6">${fT(m.at)}</small></div>`).join('')}</div><input id="tr" placeholder="Reply…"><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="g" onclick="tReply('${id}')">Send reply</button><button class="o" onclick="tClose('${id}','${t.status=='open'?'closed':'open'}')">${t.status=='open'?'Close ticket':'Reopen'}</button><button class="o" onclick="closeM()">Back</button></div>`,560)}
 function tReply(id){run(async()=>{await api('/ticket/'+id,{text:$('#tr').value});closeM();show()},'Sent ✓')}
 function tClose(id,s){run(async()=>{await api('/ticket/'+id,{status:s});closeM();show()})}
-function sendN(){run(async()=>{await api('/notice',{title:$('#nt').value,body:$('#nb').value,image:$('#ni').value});show()},'Sent ✓')}
+function sendN(){run(async()=>{const r=await api('/notice',{title:$('#nt').value,body:$('#nb').value,image:$('#ni').value});show();toast('Sent ✓ ('+r.devices+' devices)')})}
 function delN(id){run(async()=>{await api('/notice/'+id,null,'DELETE');show()})}
 show();
 </script></body></html>

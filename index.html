@@ -261,6 +261,35 @@ function goBack(){if(MH){closeM();return}if(depth>0)history.back();else{view='ho
 function tab(v){nav(()=>{if(v===view){P={};render();return}const rep=MH;if(rep){MH=0;rmM()}depth++;view=v;P={};rep?hsync():hpush();render()})}
 function navbar(){const t=[['board','chart','Ranks'],['notif','mega','Updates'],['home','home',''],['wallet','wallet','Wallet'],['menu','user','Profile']];return `<nav>${t.map(x=>`<div class="${view==x[0]?'on':''}" onclick="tab('${x[0]}')">${ico(x[1])}${x[2]?`<span>${x[2]}</span>`:''}</div>`).join('')}</nav>`}
 
+/* ---------- PUSH NOTIFICATIONS ---------- */
+const pushOK=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const b64u=k=>{const p='='.repeat((4-k.length%4)%4),r=atob((k+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0))};
+async function pushInit(ask){
+  try{
+    if(!pushOK()||!tk())return;
+    if(Notification.permission==='denied'){if(ask)toast('Browser settings me notifications allow karo');return}
+    if(Notification.permission!=='granted'){if(!ask)return;if(await Notification.requestPermission()!=='granted')return}
+    const reg=await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;
+    const {key}=await api('/push/key');if(!key)return;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(key)});
+    await api('/push/subscribe',{sub:sub.toJSON()});
+    const b=document.getElementById('pushbar');if(b)b.remove();
+  }catch(e){}
+}
+async function pushOff(){
+  try{if(!pushOK())return;const reg=await navigator.serviceWorker.getRegistration('/sw.js');const sub=reg&&await reg.pushManager.getSubscription();
+    if(sub){await api('/push/unsubscribe',{endpoint:sub.endpoint});await sub.unsubscribe()}}catch(e){}
+}
+function pushCheck(){
+  if(!pushOK()||!tk())return;
+  if(Notification.permission==='granted')return pushInit(false);
+  if(Notification.permission!=='default'||localStorage.getItem('pushNo')||document.getElementById('pushbar'))return;
+  const d=document.createElement('div');d.id='pushbar';
+  d.style.cssText='position:fixed;left:12px;right:12px;bottom:84px;z-index:50;background:#16223f;border:1px solid #ffffff22;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 30px #0008;color:#e8eeff;font-size:13px';
+  d.innerHTML='<span style="flex:1">🔔 Match room, result aur wallet ki notification chahiye?</span><button style="padding:8px 14px;width:auto" onclick="pushInit(true)">Allow</button><span style="padding:4px 8px;cursor:pointer;color:#8fa0c8" onclick="try{localStorage.setItem(\'pushNo\',1)}catch{}this.parentNode.remove()">✕</span>';
+  document.body.appendChild(d);
+}
 /* ---------- AUTH ---------- */
 async function boot(){
   const hs=history.state;if(hs&&hs.wc){view=hs.view||'home';P=hs.P||{};depth=hs.d||0}   // restore screen after reload
@@ -270,7 +299,7 @@ async function boot(){
   if(S.maintenance&&!tk())return maint();
   if(!tk())return authView();
   try{U=await api('/stats')}catch{return}
-  render();
+  render();pushCheck();
   const p=new URLSearchParams(location.search).get('paid');
   if(p){hsync('/');checkPay(p)}
 }
@@ -285,8 +314,8 @@ function authView(signup){
   <p style="text-align:center;margin-top:18px;color:var(--mu);font-size:14px">${signup?'Pehle se account hai? <a onclick="authView()">Login</a>':'Naye ho? <a onclick="authView(1)">Sign up</a>'}</p></div>`}
 async function doAuth(s){
   try{const r=await api(s?'/signup':'/login',{username:$('#u').value,password:$('#p').value,ref:s?$('#rf').value:''});
-  setTk(r.token);U=await api('/stats');toRoot(()=>{view='home';P={};depth=0;hsync('/');render();if(s)toast('Welcome! ')})}catch(e){toast(e.message)}}
-function logout(){setTk(null);U=null;authView();toRoot(()=>{view='home';P={};depth=0;hsync()})}
+  setTk(r.token);U=await api('/stats');toRoot(()=>{view='home';P={};depth=0;hsync('/');render();pushCheck();if(s)toast('Welcome! ')})}catch(e){toast(e.message)}}
+async function logout(){await pushOff();setTk(null);U=null;authView();toRoot(()=>{view='home';P={};depth=0;hsync()})}
 
 /* ---------- RENDER ---------- */
 async function render(){

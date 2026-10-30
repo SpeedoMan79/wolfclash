@@ -4,6 +4,8 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Redis } = require('@upstash/redis');
+let webpush = null;
+try { webpush = require('web-push'); } catch { console.warn('!!! web-push package missing: push notifications disabled (run npm install) !!!'); }
 
 // ====== ENV (Render me set karo) ======
 // UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
@@ -87,7 +89,48 @@ function migrate() { // purane joins ko slot assign
     js.filter(j => !j.slot).forEach(j => { for (let s = 1; s <= m.slots && !j.slot; s++) for (let p = 0; p < sz && !j.slot; p++) if (!used.has(s + '-' + p)) { j.slot = s; j.pos = p; used.add(s + '-' + p); } if (!j.slot) { j.slot = m.slots + 1; j.pos = 0; } });
   });
 }
-const notify = (to, title, body, image) => { db.notices.unshift({ id: uid(), title, body, image: image || '', to, at: Date.now() }); db.notices = db.notices.slice(0, 500); };
+const notify = (to, title, body, image) => { db.notices.unshift({ id: uid(), title, body, image: image || '', to, at: Date.now() }); db.notices = db.notices.slice(0, 500); return queuePush(to, title, body, image); };
+
+// ====== WEB PUSH (phone / browser notifications) ======
+// VAPID keys are generated once and kept in Redis ("vapid"), so no extra env setup is needed.
+let pushReady = false, vapidPublic = '';
+async function initPush() {
+  if (!webpush) return;
+  try {
+    let v = await redis.get('vapid');
+    if (typeof v === 'string') v = JSON.parse(v);
+    if (!v || !v.publicKey || !v.privateKey) { v = webpush.generateVAPIDKeys(); await redis.set('vapid', JSON.stringify(v)); console.log('Generated new VAPID keys'); }
+    const subject = process.env.VAPID_SUBJECT || (SITE.startsWith('https://') ? SITE : 'mailto:admin@example.com');
+    webpush.setVapidDetails(subject, v.publicKey, v.privateKey);
+    vapidPublic = v.publicKey; pushReady = true;
+  } catch (e) { console.error('Push init failed:', e.message); }
+}
+function pushTargets(to) { // to = array of user ids, or null/undefined = everyone
+  const ids = Array.isArray(to) ? to : Object.keys(db.users), out = [];
+  for (const id of ids) { const u = db.users[id]; if (u && !u.banned && u.push) for (const s of u.push) out.push({ uid: u.id, sub: s }); }
+  return out;
+}
+async function sendAll(targets, payload) {
+  const dead = [];
+  for (let i = 0; i < targets.length; i += 20) {
+    await Promise.all(targets.slice(i, i + 20).map(async t => {
+      try { await webpush.sendNotification(t.sub, payload, { TTL: 86400 }); }
+      catch (e) { if (e.statusCode === 404 || e.statusCode === 410) dead.push(t); else console.warn('push failed', e.statusCode || e.message); }
+    }));
+  }
+  if (dead.length) lock(async () => { // device uninstalled / permission revoked: forget it
+    dead.forEach(t => { const u = db.users[t.uid]; if (u && u.push) u.push = u.push.filter(p => p.endpoint !== t.sub.endpoint); });
+    await save().catch(() => {});
+  });
+}
+function queuePush(to, title, body, image) {
+  if (!pushReady || !db) return 0;
+  const targets = pushTargets(to); if (!targets.length) return 0;
+  const logo = db.settings.logo || '', img = String(image || '');
+  const payload = JSON.stringify({ title: String(title || db.settings.appName).slice(0, 80), body: String(body || '').slice(0, 220), url: '/', icon: /^https:\/\//.test(logo) ? logo : '', image: /^https:\/\//.test(img) ? img : '' });
+  setImmediate(() => sendAll(targets, payload).catch(e => console.error('push error', e.message)));
+  return targets.length;
+}
 
 const app = express();
 app.set('trust proxy', 1);
@@ -104,7 +147,7 @@ app.use(express.json({ limit: '3mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(['/api/login', '/api/signup', '/api/admin/login'], rl(10, 15 * 60e3));
-app.use(['/api/deposit', '/api/withdraw', '/api/promo', '/api/daily', '/api/join', '/api/change-slot', '/api/password', '/api/ticket', '/api/admin/upload'], rl(30, 60e3));
+app.use(['/api/deposit', '/api/withdraw', '/api/promo', '/api/daily', '/api/join', '/api/change-slot', '/api/password', '/api/ticket', '/api/admin/upload', '/api/push/subscribe'], rl(30, 60e3));
 app.use('/api', (req, res, next) => {
   if (db && db.settings.maintenance && !req.path.startsWith('/admin') && req.path !== '/settings' && req.path !== '/webhook') return res.status(503).json({ error: db.settings.maintenanceMsg });
   next();
@@ -242,6 +285,26 @@ app.get('/api/wallet', wrap(async (req, res) => {
 
 app.get('/api/notifications', wrap(async (req, res) => { const u = user(req); res.json(db.notices.filter(n => !n.to || n.to.includes(u.id)).slice(0, 50)); }));
 
+// ====== PUSH SUBSCRIPTIONS ======
+app.get('/api/push/key', (req, res) => res.json({ key: pushReady ? vapidPublic : null }));
+app.post('/api/push/subscribe', wrap(async (req, res) => {
+  const u = user(req), s = req.body && req.body.sub;
+  if (!pushReady) fail('Push not available', 400);
+  if (!s || typeof s.endpoint !== 'string' || !/^https:\/\//.test(s.endpoint) || s.endpoint.length > 600 || !s.keys || typeof s.keys.p256dh !== 'string' || typeof s.keys.auth !== 'string') fail('Invalid subscription');
+  const had = (u.push || []).some(p => p.endpoint === s.endpoint);
+  Object.values(db.users).forEach(x => { if (x.push) x.push = x.push.filter(p => p.endpoint !== s.endpoint); }); // a device belongs to ONE account
+  u.push = (u.push || []).concat({ endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh.slice(0, 200), auth: s.keys.auth.slice(0, 100) }, at: Date.now() }).slice(-5);
+  await save();
+  if (!had) webpush.sendNotification(u.push[u.push.length - 1], JSON.stringify({ title: 'Notifications ON 🔔', body: 'Ab match room, result aur wallet updates yahin milenge.', url: '/', icon: '', image: '' })).catch(() => {});
+  res.json({ ok: true });
+}));
+app.post('/api/push/unsubscribe', wrap(async (req, res) => {
+  const u = user(req), ep = String((req.body && req.body.endpoint) || '');
+  if (u.push) { u.push = u.push.filter(p => p.endpoint !== ep); await save(); }
+  res.json({ ok: true });
+}));
+app.get('/sw.js', (q, r) => { r.set({ 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/' }); r.type('application/javascript'); r.sendFile(path.join(__dirname, 'sw.js')); });
+
 // ====== DEPOSIT (ZAPUPI) ======
 function bonusFor(amount) {
   const t = db.settings.depositBonus.filter(x => amount >= x.dep).sort((a, b) => b.dep - a.dep)[0];
@@ -308,6 +371,7 @@ async function settleDeposit(d) {
     const b = bonusFor(d.amount);
     if (b > 0) { u.bonus += b; tx(u, 'credit', 'bonus', b, 'Deposit bonus'); }
     d.status = 'approved'; d.txnId = txn; d.utr = String(o.utr || '').slice(0, 40); d.paidAt = Date.now();
+    notify([u.id], 'Deposit successful ✅', `₹${d.amount} added to your wallet` + (b > 0 ? ` + ₹${b} bonus` : ''));
     await save();
   } else if (st === 'failed' && d.status === 'pending') { d.status = 'failed'; await save(); }
   return d;
@@ -367,7 +431,7 @@ app.post('/api/admin/login', wrap(async (req, res) => {
 }));
 app.get('/api/admin/stats', wrap(async (req, res) => {
   admin(req);
-  res.json({ dbKB: Math.round(JSON.stringify(db).length / 1024), banned: Object.values(db.users).filter(u => u.banned).length, liabilities: Object.values(db.users).reduce((a, u) => a + u.win + u.dep + u.bonus, 0), pendingDeposits: db.deposits.filter(d => d.status === 'pending').length, openTickets: db.tickets.filter(t => t.status === 'open').length, users: Object.keys(db.users).length, matches: db.matches.length, pendingWithdraw: db.withdrawals.filter(w => w.status === 'pending').length, depositTotal: db.deposits.filter(d => d.status === 'approved').reduce((a, d) => a + d.amount, 0), withdrawTotal: db.withdrawals.filter(w => w.status === 'approved').reduce((a, d) => a + d.amount, 0) });
+  res.json({ dbKB: Math.round(JSON.stringify(db).length / 1024), banned: Object.values(db.users).filter(u => u.banned).length, liabilities: Object.values(db.users).reduce((a, u) => a + u.win + u.dep + u.bonus, 0), pendingDeposits: db.deposits.filter(d => d.status === 'pending').length, pushUsers: Object.values(db.users).filter(u => u.push && u.push.length).length, openTickets: db.tickets.filter(t => t.status === 'open').length, users: Object.keys(db.users).length, matches: db.matches.length, pendingWithdraw: db.withdrawals.filter(w => w.status === 'pending').length, depositTotal: db.deposits.filter(d => d.status === 'approved').reduce((a, d) => a + d.amount, 0), withdrawTotal: db.withdrawals.filter(w => w.status === 'approved').reduce((a, d) => a + d.amount, 0) });
 }));
 app.get('/api/admin/users', wrap(async (req, res) => { admin(req); res.json(Object.values(db.users).map(u => ({ ...pub(u), banned: !!u.banned, createdAt: u.createdAt }))); }));
 app.post('/api/admin/user/:id', wrap(async (req, res) => {
@@ -462,8 +526,8 @@ app.post('/api/admin/withdrawal/:id', wrap(async (req, res) => {
   admin(req);
   const w = db.withdrawals.find(x => String(x.id) === req.params.id); if (!w || w.status !== 'pending') fail('Not pending');
   log('Withdraw ' + req.body.action + ' #' + w.id);
-  if (req.body.action === 'approve') w.status = 'approved';
-  else { w.status = 'rejected'; const u = db.users[w.uid]; if (u) { u.win += w.amount; tx(u, 'credit', 'win', w.amount, 'Withdraw refund'); } }
+  if (req.body.action === 'approve') { w.status = 'approved'; notify([w.uid], 'Withdrawal approved ✅', `₹${w.payout} sent to ${w.upi}`); }
+  else { w.status = 'rejected'; const u = db.users[w.uid]; if (u) { u.win += w.amount; tx(u, 'credit', 'win', w.amount, 'Withdraw refund'); } notify([w.uid], 'Withdrawal rejected', `₹${w.amount} refunded to your winning wallet`); }
   await save(); res.json({ ok: true });
 }));
 app.get('/api/admin/deposits', wrap(async (req, res) => { admin(req); res.json(db.deposits.slice().reverse().slice(0, 200).map(d => ({ ...d, username: db.users[d.uid]?.username }))); }));
@@ -481,8 +545,12 @@ app.post('/api/admin/settings', wrap(async (req, res) => {
 }));
 app.post('/api/admin/notice', wrap(async (req, res) => {
   admin(req);
-  db.notices.unshift({ id: uid(), title: String(req.body.title || ''), body: String(req.body.body || ''), image: String(req.body.image || ''), at: Date.now() });
-  await save(); res.json({ ok: true });
+  const title = String(req.body.title || '').trim(), body = String(req.body.body || '').trim();
+  if (!title) fail('Title required');
+  db.notices.unshift({ id: uid(), title, body, image: String(req.body.image || ''), at: Date.now() });
+  db.notices = db.notices.slice(0, 500);
+  const devices = queuePush(null, title, body, req.body.image);
+  await save(); res.json({ ok: true, devices });
 }));
 
 // ====== EXTRA USER FEATURES ======
@@ -565,7 +633,7 @@ app.post('/api/admin/deposit/:id/approve', wrap(async (req, res) => {
   admin(req); const d = db.deposits.find(x => x.id === req.params.id); if (!d || d.status === 'approved') fail('Cannot approve');
   const u = db.users[d.uid]; u.dep += d.amount; tx(u, 'credit', 'dep', d.amount, 'Manual deposit ' + d.id);
   const b = bonusFor(d.amount); if (b > 0) { u.bonus += b; tx(u, 'credit', 'bonus', b, 'Deposit bonus'); }
-  d.status = 'approved'; log('Manual approve deposit ' + d.id); await save(); res.json({ ok: true });
+  d.status = 'approved'; notify([u.id], 'Deposit successful ✅', `₹${d.amount} added to your wallet`); log('Manual approve deposit ' + d.id); await save(); res.json({ ok: true });
 }));
 app.get('/api/admin/promos', wrap(async (req, res) => { admin(req); res.json(db.promos); }));
 app.post('/api/admin/promo', wrap(async (req, res) => {
@@ -578,9 +646,16 @@ app.delete('/api/admin/promo/:code', wrap(async (req, res) => { admin(req); db.p
 app.get('/api/admin/tickets', wrap(async (req, res) => { admin(req); res.json(db.tickets.slice().reverse()); }));
 app.post('/api/admin/ticket/:id', wrap(async (req, res) => {
   admin(req); const t = db.tickets.find(x => x.id === req.params.id); if (!t) fail('No ticket', 404);
-  if (req.body.text) t.msgs.push({ from: 'admin', text: String(req.body.text).slice(0, 500), at: Date.now() });
+  if (req.body.text) { t.msgs.push({ from: 'admin', text: String(req.body.text).slice(0, 500), at: Date.now() }); notify([t.uid], 'Support replied 💬', String(req.body.text).slice(0, 120)); }
   if (req.body.status) t.status = req.body.status;
   await save(); res.json({ ok: true });
+}));
+app.post('/api/admin/user/:id/notify', wrap(async (req, res) => {
+  admin(req); const u = db.users[req.params.id]; if (!u) fail('No user', 404);
+  const title = String(req.body.title || '').trim().slice(0, 80), body = String(req.body.body || '').trim().slice(0, 500);
+  if (!title) fail('Title required');
+  const devices = notify([u.id], title, body); log('Notification to ' + u.username + ': ' + title);
+  await save(); res.json({ ok: true, devices });
 }));
 app.get('/api/admin/notices', wrap(async (req, res) => { admin(req); res.json(db.notices); }));
 app.delete('/api/admin/notice/:id', wrap(async (req, res) => { admin(req); db.notices = db.notices.filter(n => n.id !== req.params.id); await save(); res.json({ ok: true }); }));
@@ -659,5 +734,5 @@ app.get('/', (q, r) => r.sendFile(path.join(__dirname, 'index.html')));
 app.get('/favicon.ico', (q, r) => r.status(204).end());
 app.get('/health', (q, r) => r.send('ok'));
 
-if (require.main === module) load().then(() => app.listen(PORT, () => console.log('Running on', PORT))).catch(e => { console.error('Startup failed (Redis unreachable?):', e.message); process.exit(1); });
+if (require.main === module) load().then(initPush).then(() => app.listen(PORT, () => console.log('Running on', PORT))).catch(e => { console.error('Startup failed (Redis unreachable?):', e.message); process.exit(1); });
 module.exports = { app, load, getDb: () => db };
