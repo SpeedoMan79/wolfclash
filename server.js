@@ -48,6 +48,7 @@ const DEFAULT = () => ({
     { id: 'g3', name: 'LONE WOLF 2v2', image: '' }
   ],
   matches: [], joins: [], deposits: [], withdrawals: [], txns: [], notices: [], promos: [], tickets: [], logs: [],
+  adminPush: [], adminAlerts: [],
   settings: {
     appName: 'Arena Battle', logo: '', announcement: 'Welcome! Fair play karo.',
     signupBonus: 0, referrerBonus: 0, referralMinEntry: 0,
@@ -119,7 +120,10 @@ async function sendAll(targets, payload) {
     }));
   }
   if (dead.length) lock(async () => { // device uninstalled / permission revoked: forget it
-    dead.forEach(t => { const u = db.users[t.uid]; if (u && u.push) u.push = u.push.filter(p => p.endpoint !== t.sub.endpoint); });
+    dead.forEach(t => {
+      if (t.uid === '__admin') { db.adminPush = (db.adminPush || []).filter(p => p.endpoint !== t.sub.endpoint); return; }
+      const u = db.users[t.uid]; if (u && u.push) u.push = u.push.filter(p => p.endpoint !== t.sub.endpoint);
+    });
     await save().catch(() => {});
   });
 }
@@ -129,6 +133,20 @@ function queuePush(to, title, body, image) {
   const logo = db.settings.logo || '', img = String(image || '');
   const payload = JSON.stringify({ title: String(title || db.settings.appName).slice(0, 80), body: String(body || '').slice(0, 220), url: '/', icon: /^https:\/\//.test(logo) ? logo : '', image: /^https:\/\//.test(img) ? img : '' });
   setImmediate(() => sendAll(targets, payload).catch(e => console.error('push error', e.message)));
+  return targets.length;
+}
+
+const fT = t => new Date(t).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+// Admin ko alert: panel me list (db.adminAlerts) + registered admin devices par push
+function adminNotify(title, body) {
+  db.adminAlerts = db.adminAlerts || [];
+  db.adminAlerts.unshift({ id: uid(), title, body, at: Date.now() });
+  db.adminAlerts = db.adminAlerts.slice(0, 100);
+  if (!pushReady) return 0;
+  const targets = (db.adminPush || []).map(s => ({ uid: '__admin', sub: s }));
+  if (!targets.length) return 0;
+  const payload = JSON.stringify({ title: String(title).slice(0, 80), body: String(body).slice(0, 220), url: '/admin', icon: '', image: '' });
+  setImmediate(() => sendAll(targets, payload).catch(e => console.error('admin push error', e.message)));
   return targets.length;
 }
 
@@ -243,6 +261,11 @@ app.post('/api/join', wrap(async (req, res) => {
   db.joins.push({ id: uid(), matchId: m.id, uid: u.id, ign, slot, pos, at: Date.now() });
   if (!u.ign) u.ign = ign;
   u.matches++;
+  if (joined.length + 1 >= m.slots * sz && !m.fullNotified) { // match full: admin ko alert
+    m.fullNotified = true;
+    adminNotify('Match FULL ✅: ' + m.title, `${m.title} (${fT(m.time)}) full ho gaya (${m.slots * sz}/${m.slots * sz}). Room ID/password dene ke liye ready raho.`);
+    log('Match full: ' + m.title);
+  }
   // referral reward on first paid match
   if (fee > 0 && fee >= num(db.settings.referralMinEntry) && u.referredBy && !u.refPaid) {
     const r = db.users[u.referredBy]; const rb = num(db.settings.referrerBonus);
@@ -476,7 +499,7 @@ app.post('/api/admin/match', wrap(async (req, res) => {
   if (b.id) { const m = db.matches.find(x => x.id === b.id); if (!m) fail('No match', 404);
     const nsz = SZ[data.type] || 1;
     if (db.joins.some(j => j.matchId === m.id && (j.slot > data.slots || j.pos >= nsz))) fail('Kuch players ke slots nayi setting se bahar hain — pehle unhe Move/Kick karo');
-    Object.assign(m, data); }
+    Object.assign(m, data); m.fullNotified = false; }
   else db.matches.push({ id: uid(), status: 'upcoming', ...data });
   await save(); res.json({ ok: true });
 }));
@@ -486,15 +509,48 @@ app.post('/api/admin/match/:id/status', wrap(async (req, res) => {
   if (['upcoming', 'ongoing'].includes(req.body.status)) m.status = req.body.status;
   await save(); res.json({ ok: true });
 }));
+// Cancel + har joined user ko exact entry fee wapas (caller save() karega)
+function cancelAndRefund(m, msg) {
+  const fee = num(m.fee), js = db.joins.filter(j => j.matchId === m.id);
+  js.forEach(j => { const u = db.users[j.uid]; if (u) { if (fee > 0) { u.dep += fee; tx(u, 'credit', 'dep', fee, 'Refund: ' + m.title); } u.matches = Math.max(0, u.matches - 1); } });
+  notify(js.map(j => j.uid), 'Match cancelled: ' + m.title, msg || 'Entry fee has been refunded.');
+  db.joins = db.joins.filter(j => j.matchId !== m.id);
+  m.status = 'cancelled'; m.cancelledAt = Date.now();
+  return js.length;
+}
 app.post('/api/admin/match/:id/cancel', wrap(async (req, res) => {
   admin(req);
   const m = db.matches.find(x => x.id === req.params.id); if (!m || m.status === 'resulted' || m.status === 'cancelled') fail('Cannot cancel');
-  db.joins.filter(j => j.matchId === m.id).forEach(j => { const u = db.users[j.uid]; if (u) { u.dep += num(m.fee); u.matches = Math.max(0, u.matches - 1); tx(u, 'credit', 'dep', num(m.fee), 'Refund: ' + m.title); } });
-  notify(db.joins.filter(j => j.matchId === m.id).map(j => j.uid), 'Match cancelled: ' + m.title, 'Entry fee has been refunded.');
-  db.joins = db.joins.filter(j => j.matchId !== m.id);
-  m.status = 'cancelled'; m.cancelledAt = Date.now(); log('Match cancelled+refunded: ' + m.title);
+  cancelAndRefund(m); log('Match cancelled+refunded: ' + m.title);
   await save(); res.json({ ok: true });
 }));
+
+// Auto: match time par full nahi hai -> cancel + refund + agli date, same time par same details ka naya match
+const DAY = 864e5;
+function autoProcessMatches() {
+  const now = Date.now(); let changed = 0;
+  for (const m of db.matches.slice()) {
+    if (m.status !== 'upcoming' || !m.time || m.time > now) continue;
+    if (db.joins.filter(j => j.matchId === m.id).length >= m.slots * sizeOf(m)) continue; // full: admin sambhalega
+    const n = cancelAndRefund(m, 'Match full nahi hua, isliye cancel ho gaya. Entry fee refund ho gayi. Naya match agli date par same time par laga diya gaya hai.');
+    let t = m.time + DAY; while (t <= now) t += DAY; // agli date, same time (always future me)
+    const { id, status, cancelledAt, result, fullNotified, rescheduledTo, autoCancelled, ...rest } = m;
+    const nm = { ...rest, id: uid(), status: 'upcoming', time: t };
+    if (m.regDeadline) nm.regDeadline = m.regDeadline + (t - m.time);
+    db.matches.push(nm);
+    m.autoCancelled = true; m.rescheduledTo = nm.id;
+    log(`Auto-cancel (not full) + refund ${n} player(s): ${m.title} -> new match ${fT(t)}`);
+    changed++;
+  }
+  return changed;
+}
+function runAutoMatches() {
+  if (!db) return;
+  lock(async () => {
+    try { if (autoProcessMatches()) await save(); }
+    catch (e) { console.error('auto match job failed:', e.message); }
+  });
+}
 // results: [{uid, kills, prize}]
 app.post('/api/admin/match/:id/result', wrap(async (req, res) => {
   admin(req);
@@ -660,6 +716,18 @@ app.post('/api/admin/user/:id/notify', wrap(async (req, res) => {
   const devices = notify([u.id], title, body); log('Notification to ' + u.username + ': ' + title);
   await save(); res.json({ ok: true, devices });
 }));
+// Admin device push subscription (match full alerts)
+app.post('/api/admin/push/subscribe', wrap(async (req, res) => {
+  admin(req); const s = req.body && req.body.sub;
+  if (!pushReady) fail('Push not available', 400);
+  if (!s || typeof s.endpoint !== 'string' || !/^https:\/\//.test(s.endpoint) || s.endpoint.length > 600 || !s.keys || typeof s.keys.p256dh !== 'string' || typeof s.keys.auth !== 'string') fail('Invalid subscription');
+  const entry = { endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh.slice(0, 200), auth: s.keys.auth.slice(0, 100) }, at: Date.now() };
+  db.adminPush = (db.adminPush || []).filter(p => p.endpoint !== s.endpoint).concat(entry).slice(-5);
+  await save();
+  webpush.sendNotification(entry, JSON.stringify({ title: 'Admin alerts ON 🔔', body: 'Match full hote hi yahan alert milega.', url: '/admin', icon: '', image: '' })).catch(() => {});
+  res.json({ ok: true });
+}));
+app.get('/api/admin/alerts', wrap(async (req, res) => { admin(req); res.json(db.adminAlerts || []); }));
 app.get('/api/admin/notices', wrap(async (req, res) => { admin(req); res.json(db.notices); }));
 app.delete('/api/admin/notice/:id', wrap(async (req, res) => { admin(req); db.notices = db.notices.filter(n => n.id !== req.params.id); await save(); res.json({ ok: true }); }));
 app.delete('/api/admin/match/:id', wrap(async (req, res) => {
@@ -691,7 +759,7 @@ app.post('/api/admin/match/:id/kick', wrap(async (req, res) => {
   admin(req); const m = MM(req); const j = joinsOf(m).find(x => x.uid === req.body.uid); if (!j) fail('Player not found');
   const u = db.users[j.uid];
   if (u) { u.dep += num(m.fee); u.matches = Math.max(0, u.matches - 1); tx(u, 'credit', 'dep', num(m.fee), 'Refund (removed): ' + m.title); notify([u.id], 'Removed from match', m.title + ' se aapko hata diya gaya. Fee refund ho gayi.'); }
-  db.joins = db.joins.filter(x => x !== j); log('Kick ' + (u && u.username) + ' from ' + m.title); await save(); res.json({ ok: true });
+  db.joins = db.joins.filter(x => x !== j); m.fullNotified = false; log('Kick ' + (u && u.username) + ' from ' + m.title); await save(); res.json({ ok: true });
 }));
 app.post('/api/admin/match/:id/move', wrap(async (req, res) => {
   admin(req); const m = MM(req); const j = joinsOf(m).find(x => x.uid === req.body.uid); if (!j) fail('Player not found');
@@ -737,5 +805,5 @@ app.get('/', (q, r) => r.sendFile(path.join(__dirname, 'index.html')));
 app.get('/favicon.ico', (q, r) => r.status(204).end());
 app.get('/health', (q, r) => r.send('ok'));
 
-if (require.main === module) load().then(initPush).then(() => app.listen(PORT, () => console.log('Running on', PORT))).catch(e => { console.error('Startup failed (Redis unreachable?):', e.message); process.exit(1); });
-module.exports = { app, load, getDb: () => db };
+if (require.main === module) load().then(initPush).then(() => { runAutoMatches(); setInterval(runAutoMatches, 30e3); return app.listen(PORT, () => console.log('Running on', PORT)); }).catch(e => { console.error('Startup failed (Redis unreachable?):', e.message); process.exit(1); });
+module.exports = { app, load, getDb: () => db, autoProcessMatches };

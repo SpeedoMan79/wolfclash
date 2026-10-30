@@ -116,12 +116,25 @@ const seatLbl=(s,p,z)=>z>1?`Team ${s} · ${'ABCD'[p]}`:`Slot ${s}`;
 function login(){$('#app').innerHTML=`<div class="login"><div class="card"><h2 style="margin-bottom:6px;color:#ff9a3c">Admin Login</h2><p style="color:var(--mu);font-size:13px;margin-bottom:10px">Sirf owner ke liye</p><label>Username</label><input id="u"><label>Password</label><input id="p" type="password" onkeydown="if(event.key=='Enter')doLogin()"><button style="width:100%;margin-top:14px;padding:12px" onclick="doLogin()">Login</button></div></div>`}
 async function doLogin(){try{const r=await api('/login',{username:$('#u').value,password:$('#p').value});T=r.token;try{localStorage.setItem('atk',T)}catch{}show()}catch(e){toast(e.message)}}
 
+/* admin alerts: match full -> push + toast */
+const b64u=s=>{const r=(s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'),a=atob(r);return Uint8Array.from([...a].map(c=>c.charCodeAt(0)))};
+async function enableAlerts(){try{
+  if(!('serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window))return toast('Is browser me push support nahi hai');
+  if(await Notification.requestPermission()!=='granted')return toast('Notification permission allow karo');
+  const reg=await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;
+  const k=await(await fetch('/api/push/key')).json();if(!k.key)return toast('Server par push ready nahi hai');
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(k.key)});
+  await api('/push/subscribe',{sub:sub.toJSON()});toast('Admin alerts ON ✓')}catch(e){toast(e.message)}}
+let seenAl=null;
+async function pollAlerts(){if(!T)return;try{const a=await api('/alerts');if(seenAl===null){seenAl=a[0]?a[0].id:'';return}const nw=[];for(const x of a){if(x.id===seenAl)break;nw.push(x)}if(a[0])seenAl=a[0].id;nw.reverse().forEach(x=>toast(x.title))}catch{}}
+setInterval(pollAlerts,30000);
 const IP={dash:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',matches:'<path d="M14 4l6 6-9 9-4-1-1-4zM5 19l3-3"/>',games:'<rect x="3" y="7" width="18" height="11" rx="4"/><path d="M8 10v5M5.500 12.500h5M16 11.500h.01M18 14h.01"/>',users:'<circle cx="9" cy="8" r="3.500"/><path d="M2.500 20c0-3.500 3-5.500 6.500-5.500s6.500 2 6.500 5.500M16 4.500a3.500 3.500 0 0 1 0 7M18 15c2.200.6 3.500 2.300 3.500 5"/>',wd:'<path d="M12 20V6M6 12l6-6 6 6"/>',dep:'<path d="M12 4v14M6 12l6 6 6-6"/>',promo:'<path d="M3 12l9-9h8v8l-9 9zM15 7.500h.01"/>',tickets:'<path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v5H5a1 1 0 0 1-1-1zM20 14h-3v5h2a1 1 0 0 0 1-1z"/>',notice:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',logs:'<path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/>',app:'<path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/>',out:'<path d="M12 3v9M6.300 6.300a8 8 0 1 0 11.400 0"/>'};
 const ic=k=>`<svg class="ni" viewBox="0 0 24 24">${IP[k]}</svg>`;
 const NAV=[['dash','dash','Dashboard'],['matches','matches','Matches'],['games','games','Games'],['users','users','Users'],['wd','wd','Withdrawals','pendingWithdraw'],['dep','dep','Deposits','pendingDeposits'],['promo','promo','Promo Codes'],['tickets','tickets','Support','openTickets'],['notice','notice','Notifications'],['settings','settings','Settings & Images'],['logs','logs','Activity Log']];
 function shell(title,body,actions){
   $('#app').innerHTML=`<div class="mt"><button class="o" onclick="document.querySelector('aside').classList.toggle('open')">☰</button><b>${esc(title)}</b></div>
-  <div style="display:flex"><aside><h2>WolfClash Admin</h2>${NAV.map(n=>`<a class="${page==n[0]?'on':''}" onclick="page='${n[0]}';F={};show()">${ic(n[1])} ${n[2]}${n[3]&&ST[n[3]]?`<b>${ST[n[3]]}</b>`:''}</a>`).join('')}<a onclick="window.open('/','_blank')">${ic('app')} Open app</a><a onclick="try{localStorage.removeItem('atk')}catch{};location.reload()" style="color:var(--r)">${ic('out')} Logout</a></aside>
+  <div style="display:flex"><aside><h2>WolfClash Admin</h2>${NAV.map(n=>`<a class="${page==n[0]?'on':''}" onclick="page='${n[0]}';F={};show()">${ic(n[1])} ${n[2]}${n[3]&&ST[n[3]]?`<b>${ST[n[3]]}</b>`:''}</a>`).join('')}<a onclick="enableAlerts()">${ic('notice')} Enable match alerts</a><a onclick="window.open('/','_blank')">${ic('app')} Open app</a><a onclick="try{localStorage.removeItem('atk')}catch{};location.reload()" style="color:var(--r)">${ic('out')} Logout</a></aside>
   <main><div class="top"><h1>${esc(title)}</h1>${actions||''}</div>${body}</main></div>`}
 
 async function show(){
