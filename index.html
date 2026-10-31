@@ -252,7 +252,7 @@ input,select,textarea{background:#173159;border-radius:12px}
 .card{background:var(--s1);border-radius:16px}
 /* contest card */
 .card.m{background:#fff;color:var(--ink);border:0;border-left:0;overflow:hidden}.card.m .im{height:180px;border-radius:0}.card.m .pz{display:none}
-.card.m .tag{background:#000a;color:#fff}.card.m h3,.card.m .bd{color:var(--ink)}.card.m small{color:#44506E}
+.card.m .tag{background:#000a;color:#fff}.card.m .im *{color:#fff}.card.m h3,.card.m .bd{color:var(--ink)}.card.m small{color:#44506E}
 .g3 div{background:none;color:#44506E;font-size:11px;padding:4px}.g3 b{color:var(--ink)!important;font-size:19px;display:flex;justify-content:center;align-items:center;gap:6px}.g3.b b{font-size:16px;display:block}
 .card.m .ty{color:#06121a}.bar{background:#E3E8F2;height:6px}.bar i{background:#22C55E!important}.bar i.fl{background:#D32F2F!important}
 .card.m .foot span{color:#44506E;font-size:13px}.card.m .room{background:#EEF2FF;border-color:#2563EB;color:var(--ink)}.card.m .fee{background:#F1F4FA;color:#44506E}
@@ -500,7 +500,7 @@ async function listM(a,my){
   const m=await api(my?'/my-matches?status='+s:`/matches?game=${P.g}&status=${s}`);window._M=m;
   a.innerHTML=head(my?'My Matches':esc(P.n||'Contests'),1)+`<div class="tabs">${['ongoing','upcoming','resulted'].map(x=>`<div class="${s==x?'on':''}" onclick="P.s='${x}';render()">${x=='resulted'?'Completed':x[0].toUpperCase()+x.slice(1)}</div>`).join('')}</div><div class="wrap">${m.map((x,i)=>mcard(x,i)).join('')||`<div class="empty"><b>${ico('sword')}</b>No ${s} matches</div>`}</div>`}
 let SEL=null,MODE='join',ADDT=0;const LT='ABCD';
-const mineLbl=x=>x.mySeats&&x.mySeats.length>1?`Team ${x.mySeats[0].slot} · ${x.mySeats.map(s=>LT[s.pos]).sort().join(', ')}`:mineLbl(x);
+const mineLbl=x=>x.mySeats&&x.mySeats.length>1?`Team ${x.mySeats[0].slot} · ${x.mySeats.map(s=>LT[s.pos]).sort().join(', ')}`:`Slot ${x.mine.slot}`;
 const slotLbl=(s,p,z)=>z>1?`Team ${s} · ${LT[p]}`:`Slot ${s}`;
 function seatGrid(x,pick){let h='';for(let s=1;s<=x.slots;s++){const c=[];for(let p=0;p<x.size;p++){const t=x.seats.find(z=>z.slot==s&&z.pos==p);c.push(`<div class="seat ${t?(t.me?'me':'tk'):''}" ${t||!pick?'':`onclick="pickSeat(${s},${p},${x.size},this)"`}><b>${x.size>1?LT[p]:s}</b><small>${t?esc(t.ign):'Free'}</small></div>`)}h+=x.size>1?`<div class="team"><span>Team ${s}</span><div class="sr">${c.join('')}</div></div>`:c.join('')}return `<div class="${x.size>1?'teams':'solo'}">${h}</div>`}
 function pickSeat(s,p,z,el){
