@@ -283,8 +283,51 @@ input,select,textarea{background:#173159;border-radius:12px}
 .fld input{height:62px;border-radius:99px;background:#fff;color:#1B1B2F;border:1px solid #ECECF2;box-shadow:0 6px 14px #14143c17;font-size:18px;padding-left:50px}.fld svg{color:#8A8CA5}
 .auth>button{height:62px;border-radius:99px;background:#6200EE;font-size:22px;font-weight:400;box-shadow:0 8px 18px #6200ee4d;margin-top:18px}.auth a{color:#6200EE}
 .auth p[style]{color:#111!important;font-size:16px!important}
+.chat{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;display:flex;flex-direction:column;background:#0B1A2C;z-index:5}
+.cbar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#10264A;border-bottom:1px solid #ffffff14}
+.cav{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#25D366,#128C7E);display:grid;place-items:center;color:#fff}.cav svg{width:22px;height:22px}
+.cbar b{display:block;font-size:15px}.cbar small{color:#4ADE80;font-size:12px}
+.cbody{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:6px;background:radial-gradient(circle at 20% 10%,#ffffff0a 0 2px,transparent 3px) 0 0/34px 34px,#0B1A2C}
+.cday{text-align:center;margin:8px 0}.cday span{background:#1F2C34;color:#9FB0D4;font-size:12px;padding:4px 12px;border-radius:8px}
+.cb{max-width:80%;padding:8px 10px 6px;border-radius:12px;font-size:15px;line-height:1.4;word-wrap:break-word;white-space:pre-wrap}
+.cb.me{align-self:flex-end;background:#005C4B;border-top-right-radius:3px}.cb.them{align-self:flex-start;background:#1F2C34;border-top-left-radius:3px}
+.ct{display:inline-flex;gap:3px;margin-left:10px;font-size:11px;color:#ffffff99;float:right;margin-top:8px}.ct i{font-style:normal;letter-spacing:-3px;margin-left:2px;color:#ffffff88}.ct i.sn{color:#53BDEB}
+.cempty{margin:auto;text-align:center;max-width:270px;color:#9FB0D4;font-size:14px;line-height:1.6;background:#1F2C34;padding:14px;border-radius:12px}
+.cq{display:none;flex-wrap:wrap;gap:8px;padding:8px 12px;background:#0B1A2C}.cq button{width:auto!important;flex:0 0 auto;background:#1F2C34;border:1px solid #25D36666;color:#25D366;border-radius:99px;padding:8px 14px;font-size:13px;font-weight:500}
+.cin{display:flex;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:#10264A}
+.cin input{flex:1;border-radius:99px;background:#1F2C34;border:0;padding:12px 16px;font-size:16px;color:#fff}
+.csend{width:46px;height:46px;border-radius:50%;padding:0;background:#25D366!important;display:grid;place-items:center}.csend svg{width:22px;height:22px;fill:#fff;stroke:none}
+/* ===== Premium splash ===== */
+#splash{position:fixed;inset:0;z-index:9999;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;
+ background:radial-gradient(120% 70% at 50% 0,#0F3D78 0,#0A1E3C 45%,#050D1C 100%);transition:opacity .5s ease,transform .5s ease,visibility .5s}
+#splash.out{opacity:0;visibility:hidden;transform:scale(1.06)}
+#splash:before,#splash:after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;filter:blur(70px);opacity:.55;animation:spF 9s ease-in-out infinite alternate}
+#splash:before{background:#2563EB;top:-90px;left:-110px}#splash:after{background:#FF7A1A;bottom:-120px;right:-120px;opacity:.28;animation-delay:-4s}
+.sp-grid{position:absolute;inset:0;background:linear-gradient(#ffffff0a 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,#ffffff0a 1px,transparent 1px) 0 0/44px 44px;-webkit-mask:radial-gradient(circle at 50% 42%,#000 0,transparent 68%);mask:radial-gradient(circle at 50% 42%,#000 0,transparent 68%)}
+.sp-emb{position:relative;width:150px;height:150px;display:grid;place-items:center;z-index:1}
+.sp-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,#2563EB,#7CC4FF,#FF7A1A,#2563EB);-webkit-mask:radial-gradient(circle,transparent 60%,#000 62%);mask:radial-gradient(circle,transparent 60%,#000 62%);animation:spR 3.2s linear infinite;filter:drop-shadow(0 0 14px #2563ebcc)}
+.sp-ring.b{inset:-14px;opacity:.35;animation-duration:6s;animation-direction:reverse;-webkit-mask:radial-gradient(circle,transparent 70%,#000 72%);mask:radial-gradient(circle,transparent 70%,#000 72%)}
+.sp-core{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#1E4FA8,#0B1F44 70%);box-shadow:inset 0 0 24px #000a,0 0 40px #2563eb66;animation:spP 2.4s ease-in-out infinite}
+.sp-core svg{width:78px;height:78px;filter:drop-shadow(0 4px 10px #000a)}
+.sp-eye{animation:spE 3s ease-in-out infinite}
+#splash h1{position:relative;z-index:1;margin:30px 0 0;font-size:38px;font-weight:700;letter-spacing:1px;background:linear-gradient(100deg,#fff 30%,#7CC4FF 45%,#fff 60%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:spS 2.8s linear infinite}
+.sp-tag{position:relative;z-index:1;margin-top:6px;font-size:12px;letter-spacing:6px;color:#FFB04D;font-weight:500}
+.sp-prog{position:relative;z-index:1;width:230px;margin-top:38px}
+.sp-bar{height:6px;border-radius:6px;background:#ffffff1c;overflow:hidden}.sp-bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#2563EB,#7CC4FF,#FFB04D);box-shadow:0 0 12px #7CC4FF99;transition:width .25s ease}
+.sp-row{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:#8FA3CC}
+#spm{position:relative;z-index:1;margin:14px 0 0;min-height:42px;max-width:290px;color:#B9C7E6;font-size:14px;line-height:1.5}
+#spr{position:relative;z-index:1;margin-top:8px;width:auto;padding:12px 30px;border-radius:99px}
+.sp-tip{position:absolute;z-index:1;left:24px;right:24px;bottom:calc(28px + env(safe-area-inset-bottom));font-size:13px;color:#7F93BD;line-height:1.5}
+.sp-tip b{display:block;color:#FFB04D;font-size:11px;letter-spacing:3px;margin-bottom:4px;font-weight:600}
+@keyframes spR{to{transform:rotate(360deg)}}@keyframes spP{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes spS{to{background-position:-250% 0}}@keyframes spF{to{transform:translate(60px,50px) scale(1.15)}}@keyframes spE{0%,90%,100%{opacity:1}94%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#splash *,#splash:before,#splash:after{animation:none!important}}
 </style>
-</head><body>
+</head><body><div id="splash"><div class="sp-grid"></div><div class="sp-emb"><div class="sp-ring b"></div><div class="sp-ring"></div><div class="sp-core"><svg viewBox="0 0 100 100"><defs><linearGradient id="spw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#9CC4FF"/></linearGradient></defs><path d="M50 92 28 70 14 38 20 8 40 28 50 26 60 28 80 8 86 38 72 70Z" fill="url(#spw)"/><path d="M20 8 40 28 26 36ZM80 8 60 28 74 36Z" fill="#2B5DB8" opacity=".55"/><path d="M50 92 36 74 50 66 64 74Z" fill="#0B1F44" opacity=".25"/><g class="sp-eye"><path d="M28 46 44 52 40 58 30 54Z" fill="#FF7A1A"/><path d="M72 46 56 52 60 58 70 54Z" fill="#FF7A1A"/></g><path d="M43 76h14l-7 9Z" fill="#0B1F44"/></svg></div></div><h1 id="spn">WolfClash</h1><div class="sp-tag">BATTLE &bull; WIN &bull; EARN</div><div class="sp-prog"><div class="sp-bar" id="spb"><i id="spf"></i></div><div class="sp-row"><span>Loading</span><span id="spp">0%</span></div></div><p id="spm">Server se connect ho raha hai…</p><button id="spr" hidden onclick="location.reload()">Retry</button><div class="sp-tip"><b>TIP</b><span id="spt">Roz daily reward claim karna mat bhoolo.</span></div></div><script>try{var __n=localStorage.getItem('wcn');if(__n)document.getElementById('spn').textContent=__n}catch(e){}
+var _sp=0,_spw=0,_st=['Server se connect ho raha hai…','Tumhara account load ho raha hai…','Matches taiyaar ho rahe hain…'],_tp=['Roz daily reward claim karna mat bhoolo.','Dost ko refer karo aur bonus kamao.','Match start hone se pehle Room ID app me aa jayegi.','Koi bhi dikkat ho to Support chat me likho.'],_i=0,_j=0;
+var _spT=setInterval(function(){_sp+=(92-_sp)*.012;var f=document.getElementById('spf'),p=document.getElementById('spp');if(f){f.style.width=_sp+'%';p.textContent=Math.round(_sp)+'%'}},120);
+setInterval(function(){var m=document.getElementById('spm');if(m&&!_spw){_i=(_i+1)%_st.length;m.textContent=_st[_i]}var t=document.getElementById('spt');if(t){_j=(_j+1)%_tp.length;t.textContent=_tp[_j]}},2400);
+</script>
 <div id="app"></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -373,16 +416,29 @@ function pushCheck(){
   document.body.appendChild(d);
 }
 /* ---------- AUTH ---------- */
+const splashMsg=t=>{const m=document.getElementById('spm');if(m)m.textContent=t};
+function splashOff(){const e=document.getElementById('splash');if(!e)return;try{clearInterval(_spT);document.getElementById('spf').style.width='100%';document.getElementById('spp').textContent='100%'}catch{}setTimeout(()=>{e.classList.add('out');setTimeout(()=>e.remove(),650)},350)}
+// Render free server so jaye to jagne tak (30-60s) loading screen dikhao aur khud retry karo
+async function wakeServer(){const t0=Date.now();
+  for(let i=0;i<45;i++){
+    try{const c=new AbortController(),to=setTimeout(()=>c.abort(),9000);const r=await fetch('/api/settings',{signal:c.signal});clearTimeout(to);
+      if(r.ok){const j=await r.json();if(j&&typeof j==='object')return j}}catch{}
+    const sec=Math.round((Date.now()-t0)/1000);
+    if(sec>=5){_spw=1;splashMsg('Server so raha tha, ab jag raha hai. 30–60 second lagte hain… '+sec+'s')}
+    await new Promise(r=>setTimeout(r,2000))}
+  return null}
 async function boot(){
   try{if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js')}catch{}
   const hs=history.state;if(hs&&hs.wc){view=hs.view||'home';P=hs.P||{};depth=hs.d||0}   // restore screen after reload
   hsync();
-  try{S=await api('/settings')}catch{S={appName:'Arena Battle',depositBonus:[],banners:[]}}
+  const S0=await wakeServer();
+  if(!S0){splashMsg('Server se connect nahi ho paaya. Internet check karo aur Retry dabao.');clearInterval(_spT);_spw=1;document.getElementById('spr').hidden=false;return}
+  S=S0;try{localStorage.setItem('wcn',S.appName||'')}catch{}
   document.title=S.appName||'Arena Battle';
-  if(S.maintenance&&!tk())return maint();
-  if(!tk())return authView();
-  try{U=await api('/stats')}catch{return}
-  render();pushCheck();
+  if(S.maintenance&&!tk()){maint();return splashOff()}
+  if(!tk()){authView();return splashOff()}
+  try{U=await api('/stats')}catch(e){splashOff();return}
+  await render();splashOff();pushCheck();
   const p=new URLSearchParams(location.search).get('paid');
   if(p){hsync('/');checkPay(p)}
 }
@@ -402,7 +458,7 @@ async function logout(){await pushOff();setTk(null);U=null;authView();toRoot(()=
 
 /* ---------- RENDER ---------- */
 async function render(){
-  const a=$('#app');clearInterval(slideT);clearInterval(cdT);scrollTo(0,0);hsync();
+  const a=$('#app');clearInterval(slideT);clearInterval(cdT);clearInterval(window.chatT);scrollTo(0,0);hsync();
   if(!a.dataset.k||a.dataset.k!=view){a.innerHTML=head('')+`<div class="wrap"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>`+navbar()}
   a.dataset.k=view;
   try{await (V[view]||V.home)(a)}catch(e){if(e.message&&!/Login again|aintenance/.test(e.message)){a.innerHTML=head('Error',1)+`<div class="wrap"><div class="empty"><b>${ico('info')}</b>${esc(e.message)}<button class="sm" style="margin-top:16px" onclick="render()">Retry</button></div></div>`}}
@@ -484,11 +540,16 @@ async stats(a){
 async notif(a){
   const n=await api('/notifications');
   a.innerHTML=head('Updates')+`<div class="wrap">${n.map(x=>`<div class="card"><b>${esc(x.title)}</b><p style="color:var(--mu);margin-top:5px;font-size:14px;line-height:1.5;white-space:pre-wrap">${esc(x.body)}</p>${x.image?`<img src="${esc(x.image)}" style="width:100%;border-radius:10px;margin-top:8px">`:''}<small style="color:var(--mu);font-size:11px">${fmtT(x.at)}</small></div>`).join('')||`<div class="empty"><b>${ico('bell')}</b>Abhi kuch nahi</div>`}</div>`+navbar()},
-async support(a){
+async tickets(a){
   const t=await api('/tickets');
-  a.innerHTML=head('Help & Support',1)+`<div class="wrap"><div class="card"><label>Subject</label><input id="ts" placeholder="Payment / Match / Account…"><label>Message</label><textarea id="tm" rows="3" placeholder="Apni problem likho"></textarea><button onclick="newTicket()">Send</button></div>
+  a.innerHTML=head('My Tickets',1)+`<div class="wrap"><div class="card"><label>Subject</label><input id="ts" placeholder="Payment / Match / Account…"><label>Message</label><textarea id="tm" rows="3" placeholder="Apni problem likho"></textarea><button onclick="newTicket()">Send</button></div>
   <div class="h2">My Tickets</div>${t.map(x=>`<div class="li" onclick="go('ticket',{id:'${x.id}'})"><div class="ic" style="background:#6a5cff">${ico('headset')}</div><div style="min-width:0"><b>${esc(x.subject)}</b><br><small style="color:var(--mu)">${fmtT(x.at)}</small></div><span class="st ${x.status}" style="margin-left:auto">${x.status}</span></div>`).join('')||'<div class="empty">No tickets</div>'}
   ${S.contact?`<div class="card" style="font-size:13px;color:var(--mu)">Contact: ${esc(S.contact)}</div>`:''}</div>`},
+async support(a){
+  CH=await api('/chat');
+  a.innerHTML=head('Support',1,`<button class="sm o" style="margin-left:auto" onclick="go('tickets')">Tickets</button>`)+`<div class="chat" id="chat"><div class="cbar"><div class="cav"><svg viewBox="0 0 24 24"><path d="M12 3a8 8 0 0 0-8 8v4a3 3 0 0 0 3 3h1v-6H6v-1a6 6 0 0 1 12 0v1h-2v6h2a2 2 0 0 1-2 2h-3v2h3a4 4 0 0 0 4-4v-8a8 8 0 0 0-8-8z"/></svg></div><div><b>WolfClash Support</b><small>● Online</small></div></div><div class="cbody" id="cb"></div><div class="cq" id="cq">${['Deposit nahi aaya','Withdraw pending hai','Room ID nahi mila','Account problem'].map(x=>`<button onclick="chatSend('${x}')">${x}</button>`).join('')}</div><div class="cin"><input id="cm" placeholder="Message likho…" maxlength="500" autocomplete="off" onkeydown="if(event.key==='Enter')chatSend()"><button class="csend" onclick="chatSend()"><svg viewBox="0 0 24 24"><path d="M3 20.5v-6.7l9-1.8-9-1.8V3.5l19 8.5z"/></svg></button></div></div>`;
+  const h=document.querySelector('header');$('#chat').style.top=(h?h.offsetHeight:80)+'px';
+  drawChat(true);clearInterval(window.chatT);window.chatT=setInterval(chatPoll,5000)},
 async ticket(a){
   const t=(await api('/tickets')).find(x=>x.id==P.id);if(!t)return goBack();
   a.innerHTML=head(esc(t.subject),1)+`<div class="wrap">${t.msgs.map(m=>`<div class="msg ${m.from}">${esc(m.text)}<small>${m.from=='admin'?'Support':'You'} • ${fmtT(m.at)}</small></div>`).join('')}<div class="card"><input id="tr" placeholder="Reply…"><button onclick="reply('${t.id}')">Send</button></div></div>`},
@@ -553,6 +614,19 @@ async function promo(){try{const r=await api('/promo',{code:$('#pc').value});toa
 function pickAv(el,v){window._av=v;document.querySelectorAll('.avs div').forEach(d=>d.classList.remove('on'));el.classList.add('on')}
 async function saveProf(){try{await api('/profile',{ign:$('#ig').value,avatar:window._av});toast('Saved ✓')}catch(e){toast(e.message)}}
 async function chPw(){try{await api('/password',{old:$('#op').value,new:$('#np').value});toast('Password changed ✓');$('#op').value=$('#np').value=''}catch(e){toast(e.message)}}
+let CH={msgs:[],adminSeenAt:0};
+const ctm=t=>new Date(t).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+const cday=t=>{const d=new Date(t),n=new Date();return d.toDateString()==n.toDateString()?'Today':new Date(n-864e5).toDateString()==d.toDateString()?'Yesterday':d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})};
+function drawChat(sc){const b=$('#cb');if(!b)return;let day='',h='';
+  if(!CH.msgs.length)h='<div class="cempty">👋 Namaste! Deposit, withdraw, match ya account — koi bhi problem ho, yahan likho. Hum jaldi reply karenge.</div>';
+  CH.msgs.forEach(m=>{const d=new Date(m.at).toDateString();if(d!==day){day=d;h+=`<div class="cday"><span>${cday(m.at)}</span></div>`}
+    const me=m.from=='user';h+=`<div class="cb ${me?'me':'them'}">${esc(m.text)}<span class="ct">${ctm(m.at)}${me?`<i class="${CH.adminSeenAt>=m.at?'sn':''}">✓✓</i>`:''}</span></div>`});
+  b.innerHTML=h;if(sc)b.scrollTop=b.scrollHeight;$('#cq').style.display=CH.msgs.length?'none':'flex'}
+async function chatSend(q){const i=$('#cm');const text=(q||i.value).trim();if(!text)return;if(!q)i.value='';
+  CH.msgs.push({from:'user',text,at:Date.now()});drawChat(true);
+  try{await api('/chat',{text});CH=await api('/chat')}catch(e){toast(e.message);try{CH=await api('/chat')}catch{}}drawChat(true)}
+async function chatPoll(){if(view!=='support'||!$('#cb')){clearInterval(window.chatT);return}
+  try{const c=await api('/chat'),b=$('#cb');if(c.msgs.length!==CH.msgs.length||c.adminSeenAt!==CH.adminSeenAt){const near=b.scrollHeight-b.scrollTop-b.clientHeight<90;CH=c;drawChat(near)}}catch{}}
 async function newTicket(){try{await api('/ticket',{subject:$('#ts').value,text:$('#tm').value});toast('Ticket sent ✓');render()}catch(e){toast(e.message)}}
 async function reply(id){try{await api('/ticket',{id,text:$('#tr').value});render()}catch(e){toast(e.message)}}
 function copyT(t){try{navigator.clipboard.writeText(t);toast('Copied ✓')}catch{toast(t)}}

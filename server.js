@@ -47,7 +47,7 @@ const DEFAULT = () => ({
     { id: 'g2', name: 'PER KILL MATCHES', image: '' },
     { id: 'g3', name: 'LONE WOLF 2v2', image: '' }
   ],
-  matches: [], joins: [], deposits: [], withdrawals: [], txns: [], notices: [], promos: [], tickets: [], logs: [],
+  matches: [], joins: [], deposits: [], withdrawals: [], txns: [], notices: [], promos: [], tickets: [], logs: [], schedules: [],
   adminPush: [], adminAlerts: [],
   settings: {
     appName: 'Arena Battle', logo: '', announcement: 'Welcome! Fair play karo.',
@@ -551,6 +551,7 @@ function autoProcessMatches() {
     if (m.status !== 'upcoming' || !m.time || m.time > now) continue;
     if (db.joins.filter(j => j.matchId === m.id).length >= m.slots * sizeOf(m)) continue; // full: admin sambhalega
     const n = cancelAndRefund(m, 'Match full nahi hua, isliye cancel ho gaya. Entry fee refund ho gayi. Naya match agli date par same time par laga diya gaya hai.');
+    if (m.scheduleId) { m.autoCancelled = true; log(`Auto-cancel (not full) + refund ${n} player(s): ${m.title} (daily schedule agla match khud banayega)`); changed++; continue; }
     let t = m.time + DAY; while (t <= now) t += DAY; // agli date, same time (always future me)
     const { id, status, cancelledAt, result, fullNotified, rescheduledTo, autoCancelled, ...rest } = m;
     const nm = { ...rest, id: uid(), status: 'upcoming', time: t };
@@ -562,13 +563,62 @@ function autoProcessMatches() {
   }
   return changed;
 }
+
+// ====== DAILY SCHEDULE: roz ke matches khud ban jayein (time IST me) ======
+const IST_MS = 19800000;
+function runSchedules() {
+  const now = Date.now(); let made = 0;
+  for (const s of db.schedules || []) {
+    if (!s.active) continue;
+    const [hh, mm] = String(s.time || '').split(':').map(Number);
+    if (!(hh >= 0 && hh < 24 && mm >= 0 && mm < 60)) continue;
+    const horizon = Math.min(72, Math.max(1, num(s.aheadHours, 24))) * 36e5;
+    const ist = new Date(now + IST_MS);
+    for (let off = 0; off <= 3; off++) {
+      const base = Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate() + off, hh, mm) - IST_MS;
+      if (base <= now || base > now + horizon) continue;
+      if (Array.isArray(s.days) && s.days.length && !s.days.includes(new Date(base + IST_MS).getUTCDay())) continue;
+      if (db.matches.some(m => m.scheduleId === s.id && m.time === base)) continue; // cancel/result hua ho tab bhi dobara nahi banega
+      s.seq = (s.seq || 0) + 1;
+      const title = String(s.title || 'Match').replace('{n}', String(s.seq + num(s.startNo)));
+      db.matches.push({ id: uid(), status: 'upcoming', scheduleId: s.id, gameId: s.gameId, title, image: s.image || '', time: base, prize: num(s.prize), perKill: num(s.perKill), fee: num(s.fee), type: s.type || 'Solo', map: s.map || '', slots: Math.max(1, Math.floor(num(s.slots, 20))),
+        regDeadline: num(s.regMins) > 0 ? base - num(s.regMins) * 6e4 : 0, roomShowMins: Math.max(0, Math.floor(num(s.roomShowMins))), roomId: '', roomPass: '', rankPrizes: (s.rankPrizes || []).map(x => num(x)).filter(x => x > 0).slice(0, 50), splitPrize: !!s.splitPrize });
+      log(`Auto-schedule: ${title} -> ${fT(base)}`); made++;
+    }
+  }
+  return made;
+}
 function runAutoMatches() {
   if (!db) return;
   lock(async () => {
-    try { if (autoProcessMatches()) await save(); }
+    try { if (autoProcessMatches() + runSchedules()) await save(); }
     catch (e) { console.error('auto match job failed:', e.message); }
   });
 }
+
+// ====== Schedule admin routes ======
+app.get('/api/admin/schedules', wrap(async (req, res) => { admin(req); res.json(db.schedules); }));
+app.post('/api/admin/schedule', wrap(async (req, res) => {
+  admin(req); const b = req.body;
+  const tm = String(b.time || '').match(/^(\d{1,2}):(\d{2})$/); if (!tm || +tm[1] > 23 || +tm[2] > 59) fail('Time HH:MM format me do (IST)');
+  if (!String(b.title || '').trim()) fail('Title do');
+  if (!(SZ[b.type || 'Solo'])) fail('Type galat hai');
+  const data = { active: b.active !== false, gameId: b.gameId || '', title: String(b.title).trim().slice(0, 120), image: b.image || '', time: tm[1].padStart(2, '0') + ':' + tm[2],
+    days: (Array.isArray(b.days) ? b.days : []).map(Number).filter(d => d >= 0 && d <= 6), type: b.type || 'Solo', map: String(b.map || ''), slots: Math.max(1, Math.floor(num(b.slots, 20))),
+    fee: num(b.fee), prize: num(b.prize), perKill: num(b.perKill), regMins: Math.max(0, Math.floor(num(b.regMins))), roomShowMins: Math.max(0, Math.floor(num(b.roomShowMins))),
+    aheadHours: Math.min(72, Math.max(1, Math.floor(num(b.aheadHours, 24)))), startNo: Math.max(0, Math.floor(num(b.startNo))),
+    rankPrizes: (Array.isArray(b.rankPrizes) ? b.rankPrizes : []).map(x => num(x)).filter(x => x > 0).slice(0, 50), splitPrize: !!b.splitPrize };
+  if (b.id) { const s = db.schedules.find(x => x.id === b.id); if (!s) fail('No schedule', 404); Object.assign(s, data); }
+  else db.schedules.push({ id: uid(), seq: 0, ...data });
+  log('Daily schedule saved: ' + data.title + ' @ ' + data.time);
+  const created = runSchedules(); await save(); res.json({ ok: true, created });
+}));
+app.post('/api/admin/schedule/:id/toggle', wrap(async (req, res) => {
+  admin(req); const s = db.schedules.find(x => x.id === req.params.id); if (!s) fail('No schedule', 404);
+  s.active = !s.active; log('Daily schedule ' + (s.active ? 'ON' : 'OFF') + ': ' + s.title); const created = s.active ? runSchedules() : 0; await save(); res.json({ ok: true, active: s.active, created });
+}));
+app.delete('/api/admin/schedule/:id', wrap(async (req, res) => { admin(req); db.schedules = db.schedules.filter(x => x.id !== req.params.id); log('Daily schedule deleted'); await save(); res.json({ ok: true }); }));
+app.post('/api/admin/schedules/run', wrap(async (req, res) => { admin(req); const created = runSchedules(); if (created) await save(); res.json({ ok: true, created }); }));
 // results: [{uid, kills, prize}]
 app.post('/api/admin/match/:id/result', wrap(async (req, res) => {
   admin(req);
@@ -671,12 +721,35 @@ app.get('/api/stats', wrap(async (req, res) => {
 app.get('/api/top-players', wrap(async (req, res) => {
   user(req); res.json(Object.values(db.users).sort((a, b) => b.earning - a.earning).slice(0, 20).map(u => ({ name: u.username, earning: u.earning, kills: u.kills, matches: u.matches, avatar: u.avatar || 'a1' })));
 }));
-app.get('/api/tickets', wrap(async (req, res) => { const u = user(req); res.json(db.tickets.filter(t => t.uid === u.id).reverse()); }));
+app.get('/api/tickets', wrap(async (req, res) => { const u = user(req); res.json(db.tickets.filter(t => t.uid === u.id && !t.chat).reverse()); }));
 app.post('/api/ticket', wrap(async (req, res) => {
   const u = user(req); const t = db.tickets.find(x => x.id === req.body.id && x.uid === u.id);
   const text = String(req.body.text || '').trim().slice(0, 500); if (!text) fail('Message likho');
   if (t) { t.msgs.push({ from: 'user', text, at: Date.now() }); t.status = 'open'; }
   else db.tickets.push({ id: uid(), uid: u.id, username: u.username, subject: String(req.body.subject || 'Support').slice(0, 60), msgs: [{ from: 'user', text, at: Date.now() }], status: 'open', at: Date.now() });
+  await save(); res.json({ ok: true });
+}));
+
+// ====== LIVE CHAT (WhatsApp jaisa support) — tickets me hi store hota hai (chat:true) ======
+const chatOf = (u, create) => {
+  let t = db.tickets.find(x => x.uid === u.id && x.chat);
+  if (!t && create) { t = { id: uid(), uid: u.id, username: u.username, subject: '💬 Live Chat', msgs: [], status: 'open', at: Date.now(), chat: true, userSeenAt: 0, adminSeenAt: 0 }; db.tickets.push(t); }
+  return t;
+};
+app.get('/api/chat', wrap(async (req, res) => {
+  const u = user(req); const t = chatOf(u);
+  if (t && t.msgs.length) { const last = t.msgs[t.msgs.length - 1].at; if ((t.userSeenAt || 0) < last) { t.userSeenAt = last; await save(); } }
+  res.json(t ? { id: t.id, msgs: t.msgs, adminSeenAt: t.adminSeenAt || 0, status: t.status } : { id: null, msgs: [], adminSeenAt: 0, status: 'open' });
+}));
+app.get('/api/chat/unread', wrap(async (req, res) => { const u = user(req); const t = chatOf(u); res.json({ n: t ? t.msgs.filter(m => m.from === 'admin' && m.at > (t.userSeenAt || 0)).length : 0 }); }));
+app.post('/api/chat', wrap(async (req, res) => {
+  const u = user(req); const text = String(req.body.text || '').trim().slice(0, 500); if (!text) fail('Message likho');
+  const t = chatOf(u, true), now = Date.now();
+  if (t.msgs.filter(m => m.from === 'user' && now - m.at < 30e3).length >= 6) fail('Thoda ruko, bahut jaldi messages ho gaye');
+  t.msgs.push({ from: 'user', text, at: now }); t.status = 'open'; t.at = now; t.userSeenAt = now;
+  const lastAdmin = [...t.msgs].reverse().find(m => m.from === 'admin');
+  if (!lastAdmin || now - lastAdmin.at > 6 * 36e5) t.msgs.push({ from: 'admin', auto: true, text: (db.settings && db.settings.chatAutoReply) || 'Namaste! 🙏 Aapka message mil gaya. Hamari support team jaldi reply karegi. Apna username aur match / deposit ID likh do to jaldi madad hogi.', at: now + 1 });
+  t.msgs = t.msgs.slice(-300);
   await save(); res.json({ ok: true });
 }));
 
@@ -723,7 +796,7 @@ app.delete('/api/admin/promo/:code', wrap(async (req, res) => { admin(req); db.p
 app.get('/api/admin/tickets', wrap(async (req, res) => { admin(req); res.json(db.tickets.slice().reverse()); }));
 app.post('/api/admin/ticket/:id', wrap(async (req, res) => {
   admin(req); const t = db.tickets.find(x => x.id === req.params.id); if (!t) fail('No ticket', 404);
-  if (req.body.text) { t.msgs.push({ from: 'admin', text: String(req.body.text).slice(0, 500), at: Date.now() }); notify([t.uid], 'Support replied 💬', String(req.body.text).slice(0, 120)); }
+  if (req.body.text) { t.msgs.push({ from: 'admin', text: String(req.body.text).slice(0, 500), at: Date.now() }); notify([t.uid], 'Support replied 💬', String(req.body.text).slice(0, 120)); t.adminSeenAt = Date.now(); }
   if (req.body.status) t.status = req.body.status;
   await save(); res.json({ ok: true });
 }));
