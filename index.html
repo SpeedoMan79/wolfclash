@@ -400,6 +400,11 @@ button.g:not([disabled])::after,.card.m button:not([disabled])::after{content:""
 .game .im{height:230px!important}
 .games::after{content:"";flex:0 0 2px}
 html,body{overflow-x:hidden}
+/* v9.2: games = 2-column grid (ek row me 2 card, square size) */
+.games{display:grid!important;grid-template-columns:1fr 1fr!important;gap:12px!important;overflow:visible!important;margin:0!important;padding:4px 0 8px!important;scroll-snap-type:none!important}
+.games::after{display:none!important}
+.game{flex:none!important;width:auto!important;max-width:none!important;scroll-snap-align:none!important;border-radius:20px!important}
+.game .im{height:176px!important;background-size:cover!important;background-position:center!important}
 /* nav sliding indicator (JS) */
 nav div.on:after{content:none!important}
 .navind{position:absolute;bottom:4px;left:0;height:3px;width:22px;border-radius:3px;background:var(--gold);box-shadow:0 0 12px var(--gold);pointer-events:none}
