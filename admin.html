@@ -124,7 +124,28 @@ th{background:#ffffff08!important}tr:hover td{background:#2563eb14!important}
 .approved,.paid,.upcoming,.resolved{color:#4ADE80!important}.pending,.open,.ongoing{color:#FBBF24!important}.rejected,.failed,.closed,.banned{color:#F87171!important}
 ::-webkit-scrollbar-thumb{background:#2563EB88!important}
 </style>
-</head><body>
+<style id="v9a">
+/* ===== Admin v9: animations + polish ===== */
+html{scroll-behavior:smooth}
+button{position:relative;overflow:hidden;min-height:40px;transition:transform .14s ease,filter .2s}button:active{transform:scale(.96)}
+.rip{position:absolute;border-radius:50%;background:#ffffff55;transform:scale(0);animation:a9rip .6s ease-out forwards;pointer-events:none}@keyframes a9rip{to{transform:scale(4);opacity:0}}
+@keyframes a9up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+main>*{animation:a9up .45s cubic-bezier(.2,.8,.3,1) both}main>*:nth-child(2){animation-delay:.06s}main>*:nth-child(3){animation-delay:.12s}main>*:nth-child(n+4){animation-delay:.18s}
+.kpi{animation:a9up .5s cubic-bezier(.2,.8,.3,1) both;transition:transform .2s,box-shadow .2s}.kpi:hover,.kpi:active{transform:translateY(-3px);box-shadow:0 14px 30px #2563eb40}
+.kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.2s}.kpi:nth-child(n+5){animation-delay:.25s}
+.card{transition:transform .2s,box-shadow .2s}
+tr{animation:a9up .35s ease both}tr:nth-child(2){animation-delay:.04s}tr:nth-child(3){animation-delay:.08s}tr:nth-child(4){animation-delay:.12s}tr:nth-child(5){animation-delay:.16s}tr:nth-child(n+6){animation-delay:.2s}
+@keyframes a9slide{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+aside.open>*{animation:a9slide .42s cubic-bezier(.2,.8,.3,1) both}
+aside.open>*:nth-child(1){animation-delay:0.07s}aside.open>*:nth-child(2){animation-delay:0.10s}aside.open>*:nth-child(3){animation-delay:0.13s}aside.open>*:nth-child(4){animation-delay:0.16s}aside.open>*:nth-child(5){animation-delay:0.19s}aside.open>*:nth-child(6){animation-delay:0.22s}aside.open>*:nth-child(7){animation-delay:0.25s}aside.open>*:nth-child(8){animation-delay:0.28s}aside.open>*:nth-child(9){animation-delay:0.31s}aside.open>*:nth-child(10){animation-delay:0.34s}aside.open>*:nth-child(11){animation-delay:0.37s}aside.open>*:nth-child(12){animation-delay:0.40s}aside.open>*:nth-child(13){animation-delay:0.43s}aside.open>*:nth-child(14){animation-delay:0.46s}aside.open>*:nth-child(15){animation-delay:0.49s}aside.open>*:nth-child(16){animation-delay:0.52s}aside.open>*:nth-child(17){animation-delay:0.55s}aside.open>*:nth-child(18){animation-delay:0.58s}aside.open>*:nth-child(19){animation-delay:0.61s}aside.open>*:nth-child(20){animation-delay:0.64s}aside.open>*:nth-child(21){animation-delay:0.67s}aside.open>*:nth-child(22){animation-delay:0.70s}aside.open>*:nth-child(23){animation-delay:0.73s}aside.open>*:nth-child(24){animation-delay:0.76s}aside.open>*:nth-child(25){animation-delay:0.79s}
+.hb svg{transition:transform .3s}aside.open~.mt .hb svg,.hb:active svg{transform:rotate(90deg)}
+.toast{animation:a9up .3s both;overflow:hidden}.toast::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:#2563EB;transform-origin:left;animation:a9tp 2.6s linear forwards}@keyframes a9tp{to{transform:scaleX(0)}}
+.modal .box{animation:a9sheet .35s cubic-bezier(.2,.9,.3,1.1)}@keyframes a9sheet{from{opacity:0;transform:translateY(40px) scale(.97)}}
+.sw i{transition:transform .25s cubic-bezier(.3,1.4,.5,1)}
+.pending,.open{animation:a9pulse 2s ease-in-out infinite}@keyframes a9pulse{50%{opacity:.55}}
+aside a b{animation:a9bump 2.4s ease-in-out infinite}@keyframes a9bump{0%,80%,100%{transform:scale(1)}90%{transform:scale(1.25)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style></head><body>
 <div id="app" style="width:100%"></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -351,4 +372,8 @@ function tClose(id,s){run(async()=>{await api('/ticket/'+id,{status:s});closeM()
 function sendN(){run(async()=>{const r=await api('/notice',{title:$('#nt').value,body:$('#nb').value,image:$('#ni').value});show();toast('Sent ✓ ('+r.devices+' devices)')})}
 function delN(id){run(async()=>{await api('/notice/'+id,null,'DELETE');show()})}
 show();
+</script><script id="v9ajs">
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height),x=document.createElement('span');x.className='rip';x.style.cssText='width:'+d+'px;height:'+d+'px;left:'+(e.clientX-r.left-d/2)+'px;top:'+(e.clientY-r.top-d/2)+'px';b.appendChild(x);setTimeout(()=>x.remove(),650)},true);
+function kpiCount(){document.querySelectorAll('.kpi b').forEach(el=>{const t=el.textContent;if(el.dataset.cu===t)return;const m=t.match(/^(\D*)([\d,]+)(.*)$/);if(!m)return;const to=+m[2].replace(/,/g,'');if(!(to>0)||to>1e9)return;el.dataset.cu=t;const t0=performance.now();(function f(n){const k=Math.min(1,(n-t0)/1000),v=Math.round(to*(1-Math.pow(1-k,3)));el.textContent=m[1]+v.toLocaleString('en-IN')+m[3];if(k<1)requestAnimationFrame(f);else el.textContent=t})(t0)})}
+try{new MutationObserver(()=>{clearTimeout(window._kT);window._kT=setTimeout(kpiCount,50)}).observe(document.body,{childList:true,subtree:true})}catch(e){}
 </script></body></html>
