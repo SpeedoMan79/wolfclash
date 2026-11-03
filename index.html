@@ -394,6 +394,12 @@ button.g:not([disabled])::after,.card.m button:not([disabled])::after{content:""
 .toast{overflow:hidden}.toast::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:#7CC4FF;transform-origin:left;animation:v9tp 2.6s linear forwards}@keyframes v9tp{to{transform:scaleX(0)}}
 .modal{backdrop-filter:blur(6px)}.modal .box{animation:v9sheet .38s cubic-bezier(.2,.9,.3,1.1)}@keyframes v9sheet{from{transform:translateY(100%)}}
 .modal .box::before{content:"";display:block;width:44px;height:5px;border-radius:5px;background:#ffffff40;margin:-8px auto 14px}
+/* v9.1 fixes: carousel alignment (card ab kinare se nahi chipakta) */
+.games{margin:0 -16px!important;padding:4px 16px 16px!important;scroll-padding-left:16px!important;scroll-padding-right:16px!important;box-sizing:border-box;scroll-snap-type:x mandatory}
+.game{flex:0 0 76%!important;max-width:320px;scroll-snap-align:start;scroll-snap-stop:always}
+.game .im{height:230px!important}
+.games::after{content:"";flex:0 0 2px}
+html,body{overflow-x:hidden}
 /* nav sliding indicator (JS) */
 nav div.on:after{content:none!important}
 .navind{position:absolute;bottom:4px;left:0;height:3px;width:22px;border-radius:3px;background:var(--gold);box-shadow:0 0 12px var(--gold);pointer-events:none}
@@ -554,7 +560,6 @@ async home(a){
   <div class="wrap" style="padding-top:6px">
   ${S.announcement?`<div class="ann"><i>${ico('mega')}</i><span>${esc(S.announcement)}</span></div>`:''}
   <div class="sld" id="sl"><div class="trk">${sl.join('')}</div></div><div class="dots" id="dts">${sl.map((_,i)=>`<i class="${i?'':'on'}"></i>`).join('')}</div>
-  <div class="st3"><div><b>${st.matches||0}</b>Matches</div><div><b>${st.kills||0}</b>Kills</div><div><b>₹${st.earning||0}</b>Earned</div></div>
   <div class="h2">My Contests</div>
   <div class="mm"><div onclick="go('my',{s:'ongoing'})"><span>${ico('play')}</span>Ongoing<small>Live</small></div><div onclick="go('my',{s:'upcoming'})"><span>${ico('cal')}</span>Upcoming<small>Soon</small></div><div onclick="go('my',{s:'resulted'})"><span>${ico('check')}</span>Result<small>Done</small></div></div>
   <div class="sec" id="gm"><b>WOLFCLASH TOURNAMENTS</b><small>Big Winnings For All</small></div>
