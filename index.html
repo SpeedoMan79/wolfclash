@@ -413,6 +413,75 @@ nav div.on:after{content:none!important}
 .ptr.spin svg{animation:v9rot .7s linear infinite}@keyframes v9rot{to{transform:rotate(360deg)}}
 .net{position:fixed;top:0;left:0;right:0;padding:9px;text-align:center;font-size:13px;font-weight:500;z-index:300;transform:translateY(-100%);transition:transform .35s ease}.net.on{transform:none}.net.off{background:#EF4444}.net.ok{background:#22C55E}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+</style><style id="gamex">
+/* ===== GAMEX home + nav (pixel-matched to 360dp screenshot) ===== */
+body.gx{background:#0a1632!important;padding-bottom:96px}
+.rb,.rb *{font-family:Roboto,'Helvetica Neue',Arial,sans-serif!important}
+@keyframes gxin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes gxdrop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+@keyframes gxpulse{0%{box-shadow:0 0 0 0 #22c55e99}70%{box-shadow:0 0 0 6px #22c55e00}100%{box-shadow:0 0 0 0 #22c55e00}}
+@keyframes gxring{0%,86%,100%{transform:rotate(0)}89%{transform:rotate(16deg)}92%{transform:rotate(-14deg)}95%{transform:rotate(9deg)}98%{transform:rotate(-5deg)}}
+@keyframes gxshine{0%,55%{transform:translateX(-140%) skewX(-20deg)}100%{transform:translateX(420%) skewX(-20deg)}}
+@keyframes gxspin{to{transform:rotateY(360deg)}}
+.gxa{animation:gxin .55s cubic-bezier(.2,.8,.3,1) both;animation-delay:var(--d,0s)}
+.gxh{position:relative;z-index:5;padding:calc(29px + env(safe-area-inset-top,0px)) 18px 11px 16px;background:linear-gradient(#0d4276,#0a2c56);border-radius:0 0 24px 24px;animation:gxdrop .5s cubic-bezier(.2,.8,.3,1) both}
+.gxhr{display:flex;align-items:center;height:36px}
+.gxav{width:36px;height:36px;border-radius:50%;overflow:hidden;flex:none;cursor:pointer;background:#2b3f6b}
+.gxav .avt{width:100%!important;height:100%!important;border-radius:50%!important;display:flex;align-items:center;justify-content:center;font-size:16px}
+.gxav .avt svg{width:20px;height:20px}
+.gxnm{flex:1;min-width:0;margin-left:8px;font-size:24px;font-weight:700;line-height:36px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.gxh .gxp{position:relative;display:flex!important;align-items:center;height:18px;margin:0 12px 0 14px;padding:0 8px 0 32px!important;border:1px solid #ffffff99!important;border-radius:9px!important;background:transparent!important;color:#fff;font-size:16px;font-weight:400;line-height:18px;gap:0!important;cursor:pointer}
+.gxh .gxp .coin{position:absolute;left:-14px;top:50%;margin-top:-11.5px;width:23px;height:23px;background:radial-gradient(circle at 32% 28%,#ffe9a0,#f6b400 62%,#d98a00);border:1.5px solid #f9c93c;color:#a85d00;font-size:13px;font-weight:800;box-shadow:0 1px 3px #0006}
+.gxh .gxp .coin{animation:gxspin 5s ease-in-out infinite}
+.gxbell{width:28px;height:28px;border-radius:50%;background:#fff;color:#3b4cf0;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
+.gxbell svg{width:17px;height:17px;fill:currentColor;stroke:currentColor;stroke-width:1.6;transform-origin:50% 10%;animation:gxring 5s ease-in-out infinite}
+.gxw{padding:0 8px}
+.gxann{display:flex;height:46px;margin-top:11px;border-radius:8px;overflow:hidden;background:#1f2d49;cursor:pointer;color:#e6ebf5}
+.gxann i{flex:none;width:49px;display:flex;align-items:center;justify-content:center;background:#3b485f;color:#fff}
+.gxann i svg{width:28px;height:28px;stroke-width:1.7}
+.gxann span{flex:1;min-width:0;padding:0 8px 0 12px;font-size:16px;line-height:23px;font-weight:400;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gxann:active{filter:brightness(1.15)}
+.gxbn{position:relative;height:191px;margin-top:16px;border-radius:9px;border:1.5px solid #4fdcf0;overflow:hidden;background:#9ccbf0;box-shadow:0 0 10px #22d3ee40}
+.gxbn::after{content:"";position:absolute;top:0;bottom:0;left:0;width:30%;background:linear-gradient(90deg,transparent,#ffffff55,transparent);animation:gxshine 6s ease-in-out infinite;pointer-events:none}
+.gxtrk{display:flex;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.gxtrk::-webkit-scrollbar{display:none}
+.gxs{flex:0 0 100%;position:relative;scroll-snap-align:start;background-size:cover;background-position:center}
+.gxdef{background:linear-gradient(135deg,#78b9ee,#b9ddf8 45%,#d6ecfc)}
+.gxt{position:absolute;top:10px;left:0;right:0;text-align:center;color:#fff;font:italic 800 16px/30px Outfit,sans-serif;letter-spacing:.2px;text-shadow:0 1px 0 #2a6cb0,1px 2px 3px #0a3a7a80;white-space:nowrap}.gxt b{color:#ffd52b;font-weight:800}
+.gxtb{position:absolute;left:44px;top:38px;width:278px;table-layout:fixed;border-collapse:collapse;background:#fff;box-shadow:6px 6px 0 #6f8caa55}
+.gxtb th{height:26px;padding:0;color:#fff;font-style:italic;font-weight:700;font-size:13px}
+.gxtb th:nth-child(1){background:linear-gradient(#4b8cac,#2f7094)}.gxtb th:nth-child(2),.gxtb th:nth-child(3){background:#0a5598}.gxtb th:nth-child(4){background:#17ad24}
+.gxtb td{height:21.7px;padding:0;text-align:center;font-style:italic;font-weight:700;font-size:13px;color:#176ad8;background:#fff}
+.gxtb tr:nth-child(even) td{background:#c6dcec}.gxtb td:nth-child(4){color:#18a826}
+.gxlg{position:absolute;left:236px;top:36px;color:#ffd52b;font:italic 800 8px/1 Outfit,sans-serif;text-shadow:0 1px 2px #0008;letter-spacing:.3px}
+.gxcap{position:absolute;left:118px;top:154px;width:225px;color:#fff;font:italic 700 6px/7px Roboto,Arial,sans-serif;text-transform:uppercase;text-shadow:0 1px 2px #0a2a5a}
+.gxmore{position:absolute;left:16px;top:155px;width:102px;height:30px;margin:0;padding:0;border:0;border-radius:12px;background:#4b2bee;color:#fff;font:400 14px/30px Roboto,Arial,sans-serif;letter-spacing:0;clip-path:none;cursor:pointer;z-index:2}
+.gxmore:active{transform:scale(.95)}
+.gxd{position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:12px;pointer-events:none;z-index:3}
+.gxd i{width:6px;height:6px;border-radius:50%;background:#fff;transition:all .3s}
+.gxd i.on{width:12px;height:12px;margin:-3px;background:transparent;border:1.5px solid #fff}
+.gxmt{margin-top:9px;text-align:center;font-size:22px;line-height:30px;font-weight:600;color:#fff}
+.gxmm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
+.gxmm div{height:84px;padding-top:8px;border-radius:10px;background:#fff;color:#111;text-align:center;font-size:17px;line-height:20px;cursor:pointer;transition:transform .15s}
+.gxmm div:active,.gxg:active{transform:scale(.95)}
+.gxmm div span{display:flex;align-items:center;justify-content:center;width:40px;height:40px;margin:0 auto 6px;border-radius:9px}
+.gxmm svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.gxet{margin-top:24px;font-size:18px;line-height:26px;font-weight:500;color:#eef2fb}
+.gxgs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
+.gxg{position:relative;height:112px;border-radius:9px;border:1.5px solid #38dbf0;overflow:hidden;background-size:cover;background-position:center;cursor:pointer;transition:transform .15s}
+.gxg .gxbig{position:absolute;left:8px;top:8px;right:8px;font-weight:800;font-size:17px;line-height:1.05;color:#fff;text-shadow:0 2px 6px #000a;text-transform:uppercase}
+.gxg .gxf{position:absolute;left:0;right:0;bottom:0;height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 3px 0 4px;background:rgba(0,0,0,.5);color:#fff;font-size:15px;text-transform:uppercase}
+.gxg .gxf span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.gxg .gxf em{display:flex;align-items:center;flex:none;font-style:normal;color:#3fd36a;font-size:16px;font-weight:500}
+.gxg .gxf em::before{content:"";width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:6px;animation:gxpulse 1.8s infinite}
+nav.gxn{height:calc(70px + env(safe-area-inset-bottom,0px))!important;padding:0 0 env(safe-area-inset-bottom,0px)!important;background:#0b2d5b!important;border:0!important;border-radius:20px 20px 0 0!important;display:flex!important;justify-content:center!important;gap:33px!important;backdrop-filter:none!important;box-shadow:0 -4px 18px #0006}
+nav.gxn>div,nav.gxn>div:nth-child(n){flex:none!important;position:static!important;top:auto!important;width:auto!important;height:65px!important;margin:0!important;padding:7px 0 0!important;gap:0!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;justify-content:flex-start!important;color:#fff!important;font-size:17px;font-weight:500;line-height:20px;transition:background .25s,opacity .15s}
+nav.gxn>div.on{background:#ffffff10!important;border-bottom-color:#000!important}
+nav.gxn>div:active{opacity:.65}
+nav.gxn>div svg,nav.gxn>div.on svg{width:28px!important;height:28px!important;margin-bottom:0;fill:#fff!important;stroke:none!important;transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
+nav.gxn>div.on svg{transform:translateY(-2px) scale(1.08)}
+nav.gxn>div svg.o{fill:none!important;stroke:#fff!important}
+nav.gxn>div span{display:block;margin-top:1px;color:#fff}
+nav.gxn .navind{display:none!important}
 </style></head><body><div id="splash"><div class="sp-grid"></div><div class="sp-emb"><div class="sp-ring b"></div><div class="sp-ring"></div><div class="sp-core"><svg viewBox="0 0 100 100"><defs><linearGradient id="spw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#9CC4FF"/></linearGradient></defs><path d="M50 92 28 70 14 38 20 8 40 28 50 26 60 28 80 8 86 38 72 70Z" fill="url(#spw)"/><path d="M20 8 40 28 26 36ZM80 8 60 28 74 36Z" fill="#2B5DB8" opacity=".55"/><path d="M50 92 36 74 50 66 64 74Z" fill="#0B1F44" opacity=".25"/><g class="sp-eye"><path d="M28 46 44 52 40 58 30 54Z" fill="#FF7A1A"/><path d="M72 46 56 52 60 58 70 54Z" fill="#FF7A1A"/></g><path d="M43 76h14l-7 9Z" fill="#0B1F44"/></svg></div></div><h1 id="spn">WolfClash</h1><div class="sp-tag">BATTLE &bull; WIN &bull; EARN</div><div class="sp-prog"><div class="sp-bar" id="spb"><i id="spf"></i></div><div class="sp-row"><span>Loading</span><span id="spp">0%</span></div></div><p id="spm">Server se connect ho raha hai…</p><button id="spr" hidden onclick="location.reload()">Retry</button><div class="sp-tip"><b>TIP</b><span id="spt">Roz daily reward claim karna mat bhoolo.</span></div></div><script>try{var __n=localStorage.getItem('wcn');if(__n)document.getElementById('spn').textContent=__n}catch(e){}
 var _sp=0,_spw=0,_st=['Server se connect ho raha hai…','Tumhara account load ho raha hai…','Matches taiyaar ho rahe hain…'],_tp=['Roz daily reward claim karna mat bhoolo.','Dost ko refer karo aur bonus kamao.','Match start hone se pehle Room ID app me aa jayegi.','Koi bhi dikkat ho to Support chat me likho.'],_i=0,_j=0;
 var _spT=setInterval(function(){_sp+=(92-_sp)*.012;var f=document.getElementById('spf'),p=document.getElementById('spp');if(f){f.style.width=_sp+'%';p.textContent=Math.round(_sp)+'%'}},120);
@@ -474,7 +543,8 @@ function head(t,back,right){return `<header>${back?`<div class="back" onclick="g
 function go(v,p){nav(()=>{const rep=MH;if(rep){MH=0;rmM()}depth++;view=v;P=p||{};rep?hsync():hpush();render()})}
 function goBack(){if(MH){closeM();return}if(depth>0)history.back();else{view='home';P={};depth=0;hsync();render()}}
 function tab(v){nav(()=>{if(v===view){P={};render();return}const rep=MH;if(rep){MH=0;rmM()}depth++;view=v;P={};rep?hsync():hpush();render()})}
-function navbar(){const t=[['board','chart','Ranks'],['notif','mega','Updates'],['home','home',''],['wallet','wallet','Wallet'],['menu','user','Profile']];return `<nav>${t.map(x=>`<div class="${view==x[0]?'on':''}" onclick="tab('${x[0]}')">${ico(x[1])}${x[2]?`<span>${x[2]}</span>`:''}</div>`).join('')}</nav>`}
+const GXI={gift:'<svg class="i" viewBox="0 0 24 24"><path d="M20 7h-2.3c.2-.4.3-.8.3-1.3A2.7 2.7 0 0 0 15.300 3c-1.300 0-2.500.8-3.300 2.100C11.200 3.800 10 3 8.700 3A2.700 2.700 0 0 0 6 5.700c0 .5.100.9.300 1.300H4a1 1 0 0 0-1 1v3h8V7h2v4h8V8a1 1 0 0 0-1-1zM8.700 5c.8 0 1.500.9 1.800 2H8.700a.9.900 0 0 1 0-2zm6.600 0a.9.900 0 0 1 0 2h-1.800c.3-1.100 1-2 1.800-2zM4 13v7a1 1 0 0 0 1 1h6v-8zm9 0v8h6a1 1 0 0 0 1-1v-7z"/></svg>',home:'<svg class="i" viewBox="0 0 24 24"><path d="M12 2.500 1.800 11.500h2.700V20a1 1 0 0 0 1 1H10v-6h4v6h4.500a1 1 0 0 0 1-1v-8.500h2.700z"/></svg>',menu:'<svg class="i o" viewBox="0 0 24 24" style="stroke-width:1.7"><circle cx="12" cy="12" r="10"/><circle cx="7.600" cy="12" r="1.300" fill="#fff" stroke="none"/><circle cx="12" cy="12" r="1.300" fill="#fff" stroke="none"/><circle cx="16.400" cy="12" r="1.300" fill="#fff" stroke="none"/></svg>'};
+function navbar(){const t=[['earn','gift','Earn'],['board','gift','Leaderboard'],['home','home','Home'],['menu','menu','Menu']];return `<nav class="gxn">${t.map(x=>`<div class="${view==x[0]?'on':''}" onclick="tab('${x[0]}')">${GXI[x[1]]}<span>${x[2]}</span></div>`).join('')}</nav>`}
 
 /* ---------- PUSH NOTIFICATIONS ---------- */
 const pushOK=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
@@ -558,21 +628,25 @@ function startCd(){const f=()=>document.querySelectorAll('[data-cd]').forEach(e=
 const V={
 async home(a){
   const [g,st]=await Promise.all([api('/games'),api('/stats')]);U=st;
-  const lvl=1+Math.floor((st.matches||0)/5);
-  const DS=[['Instant Withdrawal','Jeeto aur paisa seedha apne account me','d1',"go('withdraw')"],['Refer & Earn','Dost ko invite karo, bonus kamao','d2',"tab('earn')"],['Daily Tournaments','Roz naye contests, bade prizes','d3',"document.getElementById('gm').scrollIntoView({behavior:'smooth'})"]];
-  const sl=(S.banners&&S.banners.length)?S.banners.map(b=>`<div class="sli" style="background-image:url('${esc(b.img)}')" ${b.link?`onclick="window.open('${esc(b.link)}','_blank')"`:''}></div>`):DS.map(d=>`<div class="sli ${d[2]}" onclick="${d[3]}"><div><h3>${d[0]}</h3><p>${d[1]}</p></div><span class="sic">${ico('trophy')}</span></div>`);
-  a.innerHTML=`<div class="hd" onclick="">${avh(st.avatar,st.username)}<div class="hello" onclick="tab('menu')"><b>${esc(st.username)}</b><span class="lvl">Level ${lvl}</span></div><div class="pill" onclick="tab('wallet')">${coin()}${rs(st.total)}</div><div class="bell" onclick="tab('notif')">${ico('bell')}</div></div>
-  <div class="wrap" style="padding-top:6px">
-  ${S.announcement?`<div class="ann"><i>${ico('mega')}</i><span>${esc(S.announcement)}</span></div>`:''}
-  <div class="sld" id="sl"><div class="trk">${sl.join('')}</div></div><div class="dots" id="dts">${sl.map((_,i)=>`<i class="${i?'':'on'}"></i>`).join('')}</div>
-  <div class="h2">My Contests</div>
-  <div class="mm"><div onclick="go('my',{s:'ongoing'})"><span>${ico('play')}</span>Ongoing<small>Live</small></div><div onclick="go('my',{s:'upcoming'})"><span>${ico('cal')}</span>Upcoming<small>Soon</small></div><div onclick="go('my',{s:'resulted'})"><span>${ico('check')}</span>Result<small>Done</small></div></div>
-  <div class="sec" id="gm"><b>WOLFCLASH TOURNAMENTS</b><small>Big Winnings For All</small></div>
-  <div class="games">${g.map((x,i)=>`<div class="game" onclick="go('matches',{g:'${x.id}',n:${esc(JSON.stringify(x.name))},s:'upcoming'})"><div class="im" style="${x.image?`background-image:linear-gradient(#0000 45%,#000d),url('${esc(x.image)}')`:`background-image:linear-gradient(160deg,${G[i%G.length]},#0b0b0f)`}"><span class="cnt">${x.count} live</span><span class="gn">${esc(x.name)}</span></div></div>`).join('')||'<div class="empty" style="grid-column:1/-1">No games yet</div>'}</div>
+  const bal=Math.round(st.total*100)/100;
+  const more=l=>`<button class="gxmore" onclick="event.stopPropagation();${l?`window.open('${esc(l)}','_blank')`:`go('rules')`}">More details</button>`;
+  const T=[[50,5,55],[100,11,111],[200,22,222],[300,33,333]];
+  const dflt=`<div class="gxs gxdef"><div class="gxt">GET YOUR <b>GAMEX</b> DIPOSIT BONUS</div><table class="gxtb"><colgroup><col width="76"><col width="68"><col width="70"><col width="64"></colgroup><thead><tr><th>Diposit</th><th>Coin</th><th>Bonus</th><th>Total</th></tr></thead><tbody>${T.map(r=>`<tr><td>${r[0]}</td><td>${r[0]}</td><td>+${r[1]}</td><td>₹${r[2]}</td></tr>`).join('')}</tbody></table><div class="gxlg">GAME✕</div><div class="gxcap">Coin from gamex customer support ( submit - payment screenshot, username, register number )</div>${more()}</div>`;
+  const sl=(S.banners&&S.banners.length)?S.banners.map(b=>`<div class="gxs" style="background-image:url('${esc(b.img)}')">${more(b.link)}</div>`):[dflt];
+  const MI=[['#34d399','<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-4M4 4v4h4M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/></svg>','Ongoing','ongoing'],['#22d3ee','<svg viewBox="0 0 24 24"><rect x="3.500" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4"/><rect x="13" y="13" width="3.500" height="3" rx=".6" fill="#fff" stroke="none"/></svg>','Upcoming','upcoming'],['#22c55e','<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3.500"/><path d="M7.500 12.500l3 3 6-7"/></svg>','Completed','resulted']];
+  let d=0;const D=()=>(d+=.06).toFixed(2)+'s';
+  a.innerHTML=`<div class="gxh"><div class="gxhr"><div class="gxav" onclick="tab('menu')">${avh(st.avatar,st.username)}</div><div class="gxnm" onclick="tab('menu')">${esc(st.username)}</div><div class="gxp pill" onclick="tab('wallet')">${coin()}${bal}</div><div class="gxbell" onclick="tab('notif')">${ico('bell')}</div></div></div>
+  <div class="gxw">
+  ${S.announcement?`<div class="gxann rb gxa" style="--d:.05s" onclick="go('rules')"><i>${ico('mega')}</i><span>${esc(S.announcement)}</span></div>`:''}
+  <div class="gxbn gxa" style="--d:.12s;${S.announcement?'':'margin-top:11px'}" id="sl"><div class="gxtrk">${sl.join('')}</div><div class="gxd" id="dts">${sl.map((_,i)=>`<i class="${i?'':'on'}"></i>`).join('')}</div></div>
+  <div class="gxmt gxa" style="--d:.2s">My Matches</div>
+  <div class="gxmm">${MI.map(m=>`<div class="gxa" style="--d:${D()}" onclick="go('my',{s:'${m[3]}'})"><span style="background:${m[0]}">${m[1]}</span>${m[2]}</div>`).join('')}</div>
+  <div class="gxet gxa" id="gm" style="--d:.4s">Esports Games</div>
+  <div class="gxgs">${g.map((x,i)=>`<div class="gxg rb gxa" style="--d:${(.45+i*.06).toFixed(2)}s;${x.image?`background-image:url('${esc(x.image)}')`:`background-image:linear-gradient(160deg,${G[i%G.length]},#0b0b0f)`}" onclick="go('matches',{g:'${x.id}',n:${esc(JSON.stringify(x.name))},s:'upcoming'})">${x.image?'':`<span class="gxbig">${esc(x.name)}</span>`}<div class="gxf"><span>${esc(x.name)}</span><em>${x.count}</em></div></div>`).join('')||'<div class="empty" style="grid-column:1/-1">No games yet</div>'}</div>
   </div>`+navbar();
-  const trk=document.querySelector('#sl .trk'),dt=document.querySelectorAll('#dts i');
-  if(trk){const cur=()=>Math.round(trk.scrollLeft/(trk.firstChild.offsetWidth+10));trk.addEventListener('scroll',()=>{const k=cur();dt.forEach((d,i)=>d.classList.toggle('on',i==k))});
-   if(dt.length>1)slideT=setInterval(()=>{const n=(cur()+1)%dt.length;trk.scrollTo({left:n*(trk.firstChild.offsetWidth+10),behavior:'smooth'})},3800)}
+  const trk=document.querySelector('#sl .gxtrk'),dt=document.querySelectorAll('#dts i');
+  if(trk){const cur=()=>Math.round(trk.scrollLeft/trk.clientWidth);trk.addEventListener('scroll',()=>{const k=cur();dt.forEach((d,i)=>d.classList.toggle('on',i==k))});
+   if(dt.length>1)slideT=setInterval(()=>{const n=(cur()+1)%dt.length;trk.scrollTo({left:n*trk.clientWidth,behavior:'smooth'})},3800)}
 },
 async matches(a){const my=view=='my';return listM(a,my)},
 async my(a){return listM(a,true)},
@@ -757,4 +831,7 @@ const __render2=render;render=async function(){const r=await __render2.apply(thi
 const __net=document.createElement('div');__net.className='net';document.body.appendChild(__net);let __nt;
 function netBar(t,c){__net.textContent=t;__net.className='net on '+c;clearTimeout(__nt);if(c=='ok')__nt=setTimeout(()=>__net.className='net',2200)}
 addEventListener('offline',()=>netBar('Internet nahi hai — connection check karo','off'));addEventListener('online',()=>{netBar('Wapas online ✓','ok');try{render()}catch(e){}});
+</script><script id="gxjs">
+(function(){const r=render;render=async function(){document.body.classList.toggle('gx',view==='home');return r.apply(this,arguments)}})();
+document.body.classList.add('gx');
 </script></body></html>
