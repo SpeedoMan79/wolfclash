@@ -184,7 +184,7 @@ function auth(req) {
 const user = req => { const p = auth(req); const u = db.users[p.id]; if (!u || p.admin) fail('Login required', 401); if (u.banned) fail('Account banned', 403); return u; };
 const admin = req => { const p = auth(req); if (!p.admin) fail('Admin only', 403); };
 const total = u => u.dep + u.win + u.bonus;
-const pub = u => ({ id: u.id, username: u.username, dep: u.dep, win: u.win, bonus: u.bonus, total: total(u), matches: u.matches, kills: u.kills, earning: u.earning, refCode: u.username });
+const pub = u => ({ id: u.id, username: u.username, dep: u.dep, win: u.win, bonus: u.bonus, total: total(u), matches: u.matches, kills: u.kills, earning: u.earning, refCode: u.username, name: [u.firstName, u.lastName].filter(Boolean).join(' ') });
 function tx(u, type, wallet, amt, note) {
   db.txns.unshift({ id: Math.floor(1e6 + Math.random() * 9e6), uid: u.id, type, wallet, amt, bal: u[wallet], note, at: Date.now() });
   archive.push(...db.txns.splice(5000));
@@ -195,10 +195,18 @@ app.post('/api/signup', wrap(async (req, res) => {
   const username = String(req.body.username || '').trim().toLowerCase();
   const password = String(req.body.password || '');
   const ref = String(req.body.ref || '').trim().toLowerCase();
+  const firstName = String(req.body.firstName || '').trim().slice(0, 30), lastName = String(req.body.lastName || '').trim().slice(0, 30);
+  const phone = String(req.body.phone || '').replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
+  const email = String(req.body.email || '').trim().toLowerCase();
+  if (!firstName) fail('Enter your first name');
   if (!/^[a-z0-9_]{3,20}$/.test(username)) fail('Username 3-20 chars (a-z, 0-9, _)');
+  if (!/^[6-9]\d{9}$/.test(phone)) fail('Enter a valid 10-digit mobile number');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) fail('Enter a valid email address');
   if (password.length < 6) fail('Password min 6 chars');
   if (Object.values(db.users).some(u => u.username === username)) fail('Username already taken');
-  const u = { id: uid(), username, hash: bcrypt.hashSync(password, 8), dep: 0, win: 0, bonus: 0, matches: 0, kills: 0, earning: 0, createdAt: Date.now(), referredBy: null, refPaid: false };
+  if (Object.values(db.users).some(u => u.phone === phone)) fail('This mobile number is already registered');
+  if (Object.values(db.users).some(u => u.email === email)) fail('This email is already registered');
+  const u = { id: uid(), username, firstName, lastName, phone, email, hash: bcrypt.hashSync(password, 8), dep: 0, win: 0, bonus: 0, matches: 0, kills: 0, earning: 0, createdAt: Date.now(), referredBy: null, refPaid: false };
   if (ref) { const r = Object.values(db.users).find(x => x.username === ref); if (r && r.id !== u.id) u.referredBy = r.id; }
   const sb = num(db.settings.signupBonus);
   if (sb > 0 && u.referredBy) { u.bonus += sb; tx(u, 'credit', 'bonus', sb, 'Register bonus'); }
@@ -208,9 +216,10 @@ app.post('/api/signup', wrap(async (req, res) => {
 }));
 
 app.post('/api/login', wrap(async (req, res) => {
-  const username = String(req.body.username || '').trim().toLowerCase();
-  const u = Object.values(db.users).find(x => x.username === username);
-  if (!u || !bcrypt.compareSync(String(req.body.password || ''), u.hash)) fail('Wrong username or password', 401);
+  const idn = String(req.body.username || '').trim().toLowerCase();
+  const digits = idn.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
+  const u = Object.values(db.users).find(x => x.username === idn || (x.email && x.email === idn) || (x.phone && digits && x.phone === digits));
+  if (!u || !bcrypt.compareSync(String(req.body.password || ''), u.hash)) fail('Wrong login details or password', 401);
   if (u.banned) fail('Account banned', 403);
   res.json({ token: jwt.sign({ id: u.id }, JWT_SECRET, { expiresIn: '60d' }), user: pub(u) });
 }));
@@ -241,6 +250,13 @@ app.get('/api/matches', wrap(async (req, res) => {
   res.json(list.slice(0, 100).map(m => matchView(m, u)));
 }));
 
+app.get('/api/match/:id', wrap(async (req, res) => {
+  const u = (() => { try { return user(req); } catch { return null; } })();
+  const m = db.matches.find(x => x.id === req.params.id);
+  if (!m) fail('Match not found', 404);
+  res.json(matchView(m, u));
+}));
+
 app.post('/api/join', wrap(async (req, res) => {
   const u = user(req);
   const m = db.matches.find(x => x.id === req.body.matchId);
@@ -249,7 +265,7 @@ app.post('/api/join', wrap(async (req, res) => {
   const sz = sizeOf(m);
   // seats: [{slot,pos,ign}] — Duo/Squad me ek user apni team ki 1..N seats ek saath le sakta hai (purana single slot/pos/ign format bhi chalta hai)
   const seats = (Array.isArray(req.body.seats) && req.body.seats.length ? req.body.seats : [{ slot: req.body.slot, pos: req.body.pos, ign: req.body.ign }])
-    .slice(0, 8).map(s => ({ slot: Math.floor(num(s && s.slot)), pos: Math.floor(num(s && s.pos)), ign: String((s && s.ign) || '').trim().slice(0, 30) }));
+    .slice(0, 8).map(s => ({ slot: Math.floor(num(s && s.slot)), pos: Math.floor(num(s && s.pos)), ign: String((s && s.ign) || '').trim().slice(0, 30), gid: String((s && s.gid) || '').replace(/\D/g, '').slice(0, 15) }));
   const joined = db.joins.filter(j => j.matchId === m.id), mine = joined.filter(j => j.uid === u.id);
   if (mine.length && sz === 1) fail('Already joined');
   if (mine.length + seats.length > sz) fail(mine.length ? 'Aapki team ki seats already book hain' : `${m.type} me maximum ${sz} seat le sakte ho`);
@@ -268,7 +284,7 @@ app.post('/api/join', wrap(async (req, res) => {
   if (total(u) < fee) fail('Insufficient balance. Recharge karo.');
   let rem = fee;
   for (const w of ['dep', 'bonus', 'win']) { const t = Math.min(u[w], rem); if (t > 0) { u[w] -= t; rem -= t; tx(u, 'debit', w, t, 'Joined ' + m.title + (seats.length > 1 ? ` (${seats.length} seats)` : '')); } }
-  seats.forEach(s => db.joins.push({ id: uid(), matchId: m.id, uid: u.id, ign: s.ign, slot: s.slot, pos: s.pos, at: Date.now() }));
+  seats.forEach(s => db.joins.push({ id: uid(), matchId: m.id, uid: u.id, ign: s.ign, gid: s.gid, slot: s.slot, pos: s.pos, at: Date.now() }));
   if (!u.ign) u.ign = seats[0].ign;
   if (!mine.length) u.matches++;
   if (joined.length + seats.length >= m.slots * sz && !m.fullNotified) { // match full: admin ko alert
@@ -717,6 +733,17 @@ app.get('/api/match/:id', wrap(async (req, res) => {
 app.get('/api/stats', wrap(async (req, res) => {
   const u = user(req); const wins = db.txns.filter(t => t.uid === u.id && t.type === 'prize').length;
   res.json({ ...pub(u), wins, winRate: u.matches ? Math.round(wins / u.matches * 100) : 0, ign: u.ign || '', avatar: u.avatar || 'a1', dailyDone: u.lastDaily === new Date().toDateString(), referrals: Object.values(db.users).filter(x => x.referredBy === u.id).length });
+}));
+// ====== TRUST (public, real data only) ======
+const maskN = n => { n = String(n || ''); return n.length <= 3 ? (n[0] || '?') + '**' : n.slice(0, 2) + '***' + n.slice(-1); };
+app.get('/api/trust', wrap(async (req, res) => {
+  const pr = db.txns.filter(t => t.type === 'prize');
+  res.json({ players: Object.keys(db.users).length, matches: db.matches.filter(m => m.status === 'resulted').length, paid: Math.round(pr.reduce((a, t) => a + t.amt, 0)),
+    recent: pr.slice().sort((a, b) => b.at - a.at).slice(0, 8).map(t => ({ name: maskN(db.users[t.uid] && db.users[t.uid].username), amt: t.amt, title: String(t.note || '').replace(/^Winning: /, ''), at: t.at })) });
+}));
+app.get('/api/results', wrap(async (req, res) => {
+  res.json(db.matches.filter(m => m.status === 'resulted' && Array.isArray(m.result)).sort((a, b) => b.time - a.time).slice(0, 30)
+    .map(m => ({ id: m.id, title: m.title, type: m.type, map: m.map, time: m.time, prize: m.prize, rows: m.result.slice(0, 20).map(r => ({ rank: r.rank, name: r.ign || maskN(r.username), kills: r.kills, prize: r.prize })) })));
 }));
 app.get('/api/top-players', wrap(async (req, res) => {
   user(req); res.json(Object.values(db.users).sort((a, b) => b.earning - a.earning).slice(0, 20).map(u => ({ name: u.username, earning: u.earning, kills: u.kills, matches: u.matches, avatar: u.avatar || 'a1' })));
